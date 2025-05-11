@@ -1,7 +1,7 @@
 import type React from "react"
 import { redirect } from "next/navigation"
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
+import { authOptions } from "@/lib/auth-options"
 
 // List of admin emails
 const ADMIN_EMAILS = ["s.sreedhargoud@gmail.com", "admin2@example.com"] // Replace with actual admin emails

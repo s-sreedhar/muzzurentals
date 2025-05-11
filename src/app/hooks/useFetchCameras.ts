@@ -1,6 +1,6 @@
 // useFetchCameras.ts
 import { useEffect, useState } from "react"
-import type { Camera } from "./types"
+import type { Camera } from "@/lib/types"
 
 export function useFetchCameras() {
   const [cameras, setCameras] = useState<Camera[]>([])

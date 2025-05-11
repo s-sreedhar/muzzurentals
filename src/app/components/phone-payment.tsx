@@ -34,7 +34,7 @@ export function PhonePayment({ required, amount }: PhonePaymentProps) {
       await new Promise((resolve) => setTimeout(resolve, 1500))
       setStep("verification")
     } catch (error) {
-      setError("Failed to send verification code. Please try again.")
+      setError(`Failed to send verification code. Please try again. ${error}`)
     } finally {
       setIsLoading(false)
     }
@@ -54,7 +54,7 @@ export function PhonePayment({ required, amount }: PhonePaymentProps) {
       await new Promise((resolve) => setTimeout(resolve, 1500))
       setIsVerified(true)
     } catch (error) {
-      setError("Invalid verification code. Please try again.")
+      setError(`Invalid verification code. Please try again. ${error}`)
     } finally {
       setIsLoading(false)
     }
@@ -92,7 +92,7 @@ export function PhonePayment({ required, amount }: PhonePaymentProps) {
               required={required}
             />
             <p className="text-sm text-gray-500">
-              We'll send a verification code to this number. Standard message rates may apply.
+              We&apos;ll send a verification code to this number. Standard message rates may apply.
             </p>
           </div>
           <Button type="button" onClick={handleSendCode} disabled={isLoading} className="w-full">

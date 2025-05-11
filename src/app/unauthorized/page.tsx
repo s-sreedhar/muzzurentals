@@ -11,7 +11,7 @@ export default function UnauthorizedPage() {
         <ShieldAlert className="h-24 w-24 text-red-500 mb-6" />
         <h1 className="text-4xl font-bold mb-4">Access Denied</h1>
         <p className="text-xl text-gray-300 mb-8 max-w-2xl">
-          You don't have permission to access the admin dashboard. This area is restricted to authorized administrators
+          You don&apos;t have permission to access the admin dashboard. This area is restricted to authorized administrators
           only.
         </p>
         <Button asChild className="bg-purple-600 hover:bg-purple-700">

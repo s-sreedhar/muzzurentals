@@ -1,71 +1,45 @@
-import mongoose, { Schema, type Document } from "mongoose"
-import type { IUser } from "./User"
-
-export interface IOrderItem {
-  cameraId: string
-  cameraName: string
-  quantity: number
-  pricePerDay: number
-}
+// models/Order.ts
+import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IOrder extends Document {
-  userId: mongoose.Types.ObjectId | IUser
-  userEmail: string
-  userName: string
-  items: IOrderItem[]
-  subtotal: number
-  tax: number
-  total: number
-  phoneNumber: string
-  rentalType: "half-day" | "full-day"
-  timeSlot?: "morning" | "afternoon" | "evening"
-  startDate: Date
-  endDate: Date
-  status: "pending" | "confirmed" | "completed" | "cancelled"
-  paymentMethod: string
-  paymentStatus: "pending" | "paid" | "failed"
-  notes?: string
-  createdAt: Date
-  updatedAt: Date
+  userId: string;
+  userEmail: string;
+  userName: string;
+  items: any[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  phoneNumber: string;
+  rentalType: string;
+  timeSlot: string;
+  startDate: Date;
+  endDate: Date;
+  status: string;
+  paymentMethod: string;
+  paymentStatus: string;
 }
 
-const OrderSchema: Schema = new Schema(
+const orderSchema = new Schema<IOrder>(
   {
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    userId: { type: String, required: true },
     userEmail: { type: String, required: true },
     userName: { type: String, required: true },
-    items: [
-      {
-        cameraId: { type: String, required: true },
-        cameraName: { type: String, required: true },
-        quantity: { type: Number, required: true, default: 1 },
-        pricePerDay: { type: Number, required: true },
-      },
-    ],
+    items: { type: [{ type: Schema.Types.Mixed }], required: true },
     subtotal: { type: Number, required: true },
     tax: { type: Number, required: true },
     total: { type: Number, required: true },
     phoneNumber: { type: String, required: true },
-    rentalType: { type: String, enum: ["half-day", "full-day"], required: true },
-    timeSlot: { type: String, enum: ["morning", "afternoon", "evening"] },
+    rentalType: { type: String, required: true },
+    timeSlot: { type: String, required: true },
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
-    status: {
-      type: String,
-      enum: ["pending", "confirmed", "completed", "cancelled"],
-      default: "pending",
-      required: true,
-    },
-    paymentMethod: { type: String, required: true, default: "RazorPay" },
-    paymentStatus: {
-      type: String,
-      enum: ["pending", "paid", "failed"],
-      default: "pending",
-      required: true,
-    },
-    notes: { type: String },
+    status: { type: String, required: true },
+    paymentMethod: { type: String, required: true },
+    paymentStatus: { type: String, required: true },
   },
-  { timestamps: true },
-)
+  { timestamps: true }
+);
 
-export default mongoose.models.Order || mongoose.model<IOrder>("Order", OrderSchema)
+const Order: Model<IOrder> = mongoose.models.Order || mongoose.model<IOrder>("Order", orderSchema);
+
+export default Order

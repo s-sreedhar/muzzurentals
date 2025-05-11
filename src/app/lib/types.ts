@@ -1,3 +1,4 @@
+
 export interface Camera {
   id: string
   name: string
@@ -20,3 +21,18 @@ export interface CartItem {
   startDate?: string
   endDate?: string
 }
+
+export type OrderData = {
+  userEmail: string;
+  userName: string;
+  items: Array<string>; 
+  subtotal: number;
+  tax: number;
+  total: number;
+  phoneNumber: string;
+  rentalType: string;
+  timeSlot: string;
+  startDate: string | Date;
+  endDate: string | Date;
+};
+

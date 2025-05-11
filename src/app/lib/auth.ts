@@ -1,4 +1,4 @@
-import type { NextAuthOptions, Session } from "next-auth";
+import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
 // Extend the Session type
@@ -29,6 +29,7 @@ export const authOptions: NextAuthOptions = {
 
       if (session.user) {
         session.user.id = token.sub;
+        // console.log("Session is", session)
       }
 
       return session;

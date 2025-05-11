@@ -121,7 +121,7 @@ export default function ContactPage() {
                       <Mail className="h-5 w-5 mr-3 text-blue-600" />
                       <div>
                         <h3 className="font-medium text-gray-900">Email Address</h3>
-                        <p className="text-gray-600">info@muzzurentals.com</p>
+                        <p className="text-gray-600">muzameelpatan123@gmail.com</p>
                       </div>
                     </div>
                   </div>

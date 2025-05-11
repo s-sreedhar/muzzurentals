@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useCart } from "@/lib/use-cart"
 import { useToast } from "@/hooks/use-toast"
@@ -7,45 +8,75 @@ import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import Image from "next/image"
-import { Trash2 } from "lucide-react"
+import { Trash2 } from 'lucide-react'
 import { cameras } from "@/lib/data"
 import { format, parseISO } from "date-fns"
+import type { Camera } from "@/lib/types"
+import Link from "next/link"
+
+// Define proper types for cart items with details
+interface CartItemWithDetails {
+  id: string;
+  quantity: number;
+  rentalType?: "half-day" | "full-day";
+  timeSlot?: "morning" | "afternoon" | "evening";
+  startDate?: string;
+  endDate?: string;
+  details?: Camera;
+}
 
 export default function CartPage() {
   const router = useRouter()
   const { cart, removeFromCart } = useCart()
   const { toast } = useToast()
+  
+  // Use state to prevent hydration errors
+  const [isClient, setIsClient] = useState(false)
+  const [cartItems, setCartItems] = useState<CartItemWithDetails[]>([])
+  const [subtotal, setSubtotal] = useState(0)
+  const [tax, setTax] = useState(0)
+  const [total, setTotal] = useState(0)
 
-  const cartItems = cart.map((item) => {
-    const camera = cameras.find((c) => c.id === item.id)
-    return { ...item, details: camera }
-  })
+  // Only run client-side code after hydration
+  useEffect(() => {
+    setIsClient(true)
+    
+    // Process cart items
+    const items = cart.map((item) => {
+      const camera = cameras.find((c) => c.id === item.id)
+      return { ...item, details: camera }
+    })
+    setCartItems(items)
+    
+    // Calculate totals
+    const calculatedSubtotal = items.reduce((total, item) => {
+      if (!item.details) return total
 
-  // Calculate subtotal based on rental type and duration
-  const subtotal = cartItems.reduce((total, item) => {
-    if (!item.details) return total
+      const basePrice = item.details.pricePerDay
 
-    const basePrice = item.details.pricePerDay
+      // For half-day rentals
+      if (item.rentalType === "half-day") {
+        return total + basePrice * 0.6 * item.quantity // 60% of full day price
+      }
 
-    // For half-day rentals
-    if (item.rentalType === "half-day") {
-      return total + basePrice * 0.6 * item.quantity // 60% of full day price
-    }
+      // For full-day rentals
+      if (item.startDate && item.endDate) {
+        const start = parseISO(item.startDate)
+        const end = parseISO(item.endDate)
+        const diffTime = Math.abs(end.getTime() - start.getTime())
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+        return total + basePrice * diffDays * item.quantity
+      }
 
-    // For full-day rentals
-    if (item.startDate && item.endDate) {
-      const start = parseISO(item.startDate)
-      const end = parseISO(item.endDate)
-      const diffTime = Math.abs(end.getTime() - start.getTime())
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-      return total + basePrice * diffDays * item.quantity
-    }
-
-    return total + basePrice * item.quantity
-  }, 0)
-
-  const tax = subtotal * 0.1
-  const total = subtotal + tax
+      return total + basePrice * item.quantity
+    }, 0)
+    
+    const calculatedTax = calculatedSubtotal * 0.1
+    
+    setSubtotal(calculatedSubtotal)
+    setTax(calculatedTax)
+    setTotal(calculatedSubtotal + calculatedTax)
+  }, [cart])
 
   const handleCheckout = () => {
     router.push("/cart/checkout")
@@ -60,7 +91,7 @@ export default function CartPage() {
     })
   }
 
-  const getTimeSlotLabel = (slot?: string) => {
+  const getTimeSlotLabel = (slot?: string): string => {
     if (!slot) return ""
 
     switch (slot) {
@@ -75,6 +106,22 @@ export default function CartPage() {
     }
   }
 
+  // Show loading state during hydration
+  if (!isClient) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
+        <Header />
+        <div className="container mx-auto px-4 py-12 text-center">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-700 rounded w-1/3 mx-auto mb-4"></div>
+            <div className="h-4 bg-gray-700 rounded w-1/4 mx-auto mb-8"></div>
+            <div className="h-10 bg-gray-700 rounded w-1/5 mx-auto"></div>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   if (cart.length === 0) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
@@ -83,7 +130,7 @@ export default function CartPage() {
           <h2 className="text-3xl font-bold mb-4">Your Cart is Empty</h2>
           <p className="mb-8">Add some cameras to get started with your rental</p>
           <Button asChild className="bg-purple-600 hover:bg-purple-700">
-            <a href="/">Browse Cameras</a>
+            <Link href="/">Browse Cameras</Link>
           </Button>
         </div>
       </main>
@@ -114,8 +161,8 @@ export default function CartPage() {
                     />
                   </div>
                   <div className="ml-4 flex-grow">
-                    <h4 className="font-medium text-white">{item.details?.name}</h4>
-                    <p className="text-gray-400">₹{item.details?.pricePerDay}/day</p>
+                    <h4 className="font-medium text-white">{item.details?.name || "Unknown Camera"}</h4>
+                    <p className="text-gray-400">${item.details?.pricePerDay || 0}/day</p>
                     <div className="mt-2 space-y-1 text-sm text-gray-300">
                       <p>Rental Type: {item.rentalType === "full-day" ? "Full Day" : "Half Day"}</p>
                       {item.rentalType === "half-day" && item.timeSlot && (
@@ -131,16 +178,16 @@ export default function CartPage() {
                   </div>
                   <div className="mt-4 md:mt-0 md:ml-4 flex flex-col items-end">
                     <div className="text-lg font-bold text-purple-400">
-                      ₹
+                      $
                       {item.rentalType === "half-day"
-                        ? (item.details?.pricePerDay || 0) * 0.6
-                        : (item.details?.pricePerDay || 0) *
+                        ? ((item.details?.pricePerDay || 0) * 0.6).toFixed(2)
+                        : ((item.details?.pricePerDay || 0) *
                           (item.startDate && item.endDate
                             ? Math.ceil(
                                 Math.abs(parseISO(item.endDate).getTime() - parseISO(item.startDate).getTime()) /
-                                  (1000 * 60 * 60 * 24),
+                                  (1000 * 60 * 60 * 24)
                               )
-                            : 1)}
+                            : 1)).toFixed(2)}
                     </div>
                     <Button
                       variant="ghost"
@@ -163,21 +210,21 @@ export default function CartPage() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-300">Subtotal:</span>
-                  <span>₹{subtotal.toFixed(2)}</span>
+                  <span>${subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-300">Tax (10%):</span>
-                  <span>₹{tax.toFixed(2)}</span>
+                  <span>${tax.toFixed(2)}</span>
                 </div>
                 <Separator className="my-2 bg-gray-700" />
                 <div className="flex justify-between font-bold">
                   <span>Total:</span>
-                  <span className="text-purple-400">₹{total.toFixed(2)}</span>
+                  <span className="text-purple-400">${total.toFixed(2)}</span>
                 </div>
               </div>
 
               <Button
-                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                className="w-full mt-6 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
                 onClick={handleCheckout}
               >
                 Proceed to Checkout

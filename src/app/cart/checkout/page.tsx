@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
@@ -13,9 +15,22 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+// import { createOrder } from "@/app/actions/orders"
 import { Loader2, Phone, ShieldCheck, Truck, MessageSquare } from "lucide-react"
 import { motion } from "framer-motion"
-import Script from 'next/script'
+import { format, parseISO } from "date-fns"
+import type { Camera } from "@/lib/types"
+import Link from "next/link"
+// Define proper types for cart items with details
+interface CartItemWithDetails {
+  id: string
+  quantity: number
+  rentalType?: "half-day" | "full-day"
+  timeSlot?: "morning" | "afternoon" | "evening"
+  startDate?: string
+  endDate?: string
+  details?: Camera
+}
 
 declare global {
   interface Window {
@@ -28,37 +43,73 @@ export default function CheckoutPage() {
   const { data: session, status } = useSession()
   const { cart, clearCart } = useCart()
   const { toast } = useToast()
+
+  // Use state to prevent hydration errors
+  const [isClient, setIsClient] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState("")
   const [phoneNumber, setPhoneNumber] = useState("")
   const [whatsappSent, setWhatsappSent] = useState(false)
+  const [cartItems, setCartItems] = useState<CartItemWithDetails[]>([])
+  const [subtotal, setSubtotal] = useState(0)
+  const [tax, setTax] = useState(0)
+  const [total, setTotal] = useState(0)
+
+  // Only run client-side code after hydration
+  useEffect(() => {
+    setIsClient(true)
+
+    // Process cart items
+    const items = cart.map((item) => {
+      const camera = cameras.find((c) => c.id === item.id)
+      return { ...item, details: camera }
+    })
+    setCartItems(items)
+
+    // Calculate totals
+    const calculatedSubtotal = items.reduce((total, item) => {
+      if (!item.details) return total
+
+      const basePrice = item.details.pricePerDay
+
+      // For half-day rentals
+      if (item.rentalType === "half-day") {
+        return total + basePrice * 0.6 * item.quantity // 60% of full day price
+      }
+
+      // For full-day rentals
+      if (item.startDate && item.endDate) {
+        const start = parseISO(item.startDate)
+        const end = parseISO(item.endDate)
+        const diffTime = Math.abs(end.getTime() - start.getTime())
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+        return total + basePrice * diffDays * item.quantity
+      }
+
+      return total + basePrice * item.quantity
+    }, 0)
+
+    const calculatedTax = calculatedSubtotal * 0.1
+
+    setSubtotal(calculatedSubtotal)
+    setTax(calculatedTax)
+    setTotal(calculatedSubtotal + calculatedTax)
+  }, [cart])
 
   // Redirect to sign-in if not authenticated
   useEffect(() => {
-    if (status === "unauthenticated") {
+    if (isClient && status === "unauthenticated") {
       toast({
         title: "Authentication required",
         description: "Please sign in to continue with checkout.",
-        variant: "destructive",
+        variant: "default",
       })
       router.push(`/auth/signin?callbackUrl=${encodeURIComponent("/cart/checkout")}`)
     }
-  }, [status, router, toast])
+  }, [status, router, toast, isClient])
 
-  // Calculate cart totals
-  const cartItems = cart.map((item) => {
-    const camera = cameras.find((c) => c.id === item.id)
-    return { ...item, details: camera }
-  })
-
-  const subtotal = cartItems.reduce((total, item) => {
-    return total + (item.details?.pricePerDay || 0) * item.quantity
-  }, 0)
-
-  const tax = subtotal * 0.1
-  const total = subtotal + tax
-
+  // Process checkout with RazorPay
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsProcessing(true)
@@ -100,7 +151,7 @@ export default function CheckoutPage() {
         amount: orderData.amount,
         currency: orderData.currency,
         order_id: orderData.id,
-        name: 'CameraRent',
+        name: 'Muzzu Rentals',
         description: 'Camera Rental Payment',
         image: '/logo.png',
         prefill: {
@@ -186,27 +237,58 @@ export default function CheckoutPage() {
     }
   }
 
+  const getTimeSlotLabel = (slot?: string): string => {
+    if (!slot) return ""
+
+    switch (slot) {
+      case "morning":
+        return "Morning (8:00 AM - 12:00 PM)"
+      case "afternoon":
+        return "Afternoon (12:00 PM - 4:00 PM)"
+      case "evening":
+        return "Evening (4:00 PM - 8:00 PM)"
+      default:
+        return slot
+    }
+  }
+
+  // Show loading state during hydration
+  if (!isClient) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
+        <Header />
+        <div className="container mx-auto px-4 py-12 flex items-center justify-center">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-700 rounded w-32 mx-auto mb-4"></div>
+            <div className="h-4 bg-gray-700 rounded w-48 mx-auto"></div>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   if (status === "loading") {
     return (
       <main className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
         <Header />
-        <div className="container mx-auto px-4 py-12 flex items-center justify-center bg-gray-900">
+        <div className="container mx-auto px-4 py-12 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
         </div>
       </main>
     )
   }
 
+  // Show empty cart message
   if (cart.length === 0 && !isSuccess) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
         <Header />
-        <div className="container mx-auto px-4 py-12 text-center bg-gray-900">
+        <div className="container mx-auto px-4 py-12 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <h2 className="text-3xl font-bold mb-4">Your Cart is Empty</h2>
             <p className="mb-8 text-gray-400">Add some cameras to get started with your rental</p>
             <Button asChild className="bg-purple-600 hover:bg-purple-700">
-              <a href="/">Browse Cameras</a>
+              <Link href="/">Browse Cameras</Link>
             </Button>
           </motion.div>
         </div>
@@ -214,12 +296,12 @@ export default function CheckoutPage() {
     )
   }
 
+  // Show success message
   if (isSuccess) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
-        <Script src="https://checkout.razorpay.com/v1/checkout.js" />
         <Header />
-        <div className="container mx-auto px-4 py-12 text-center bg-gray-900">
+        <div className="container mx-auto px-4 py-12 text-center">
           <div className="max-w-md mx-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -247,7 +329,7 @@ export default function CheckoutPage() {
                     </svg>
                   </div>
                   <p className="text-gray-300">
-                    Thank you for your order! A confirmation has been sent to {session?.user?.email}.
+                    Thank you for your order! A confirmation has been sent to {session?.user?.email || "your email"}.
                   </p>
 
                   {whatsappSent && (
@@ -304,10 +386,9 @@ export default function CheckoutPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
       <Header />
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" />
-      <div className="container mx-auto px-4 py-12 bg-gray-900">
+      <div className="container mx-auto px-4 py-12">
         <motion.h1
-          className="text-3xl font-bold mb-8 text-center md:text-left"
+          className="text-3xl font-bold mb-8 text-center md:text-left bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -386,7 +467,7 @@ export default function CheckoutPage() {
                         className="bg-gray-700 border-gray-600 text-white"
                       />
                       <p className="text-xs text-gray-400">
-                        We'll send your order confirmation and updates via WhatsApp to this number
+                        We&apos;ll send your order confirmation and updates via WhatsApp to this number
                       </p>
                     </div>
                   </CardContent>
@@ -395,7 +476,7 @@ export default function CheckoutPage() {
                 <Card className="bg-gray-800 border-gray-700 text-white overflow-hidden">
                   <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 to-indigo-500" />
                   <CardHeader>
-                    <CardTitle>Payment with Razorpay</CardTitle>
+                    <CardTitle>Payment with PhonePe</CardTitle>
                     <CardDescription className="text-gray-400">Fast and secure payment</CardDescription>
                   </CardHeader>
                   <CardContent className="flex items-center justify-center py-8">
@@ -404,7 +485,7 @@ export default function CheckoutPage() {
                         <Phone className="h-8 w-8 text-purple-400" />
                       </div>
                       <p className="text-gray-300">
-                        Click the button below to proceed with your secure payment of ₹{(total * 83.33).toFixed(2)} via Razorpay.
+                        You&apos;ll be redirected to PhonePe to complete your payment of ${total.toFixed(2)}
                       </p>
                     </div>
                   </CardContent>
@@ -422,7 +503,7 @@ export default function CheckoutPage() {
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...
                       </>
                     ) : (
-                      `Pay Securely with Razorpay • ₹${(total * 83.33).toFixed(2)}`
+                      `Pay with PhonePe • $${total.toFixed(2)}`
                     )}
                   </Button>
                 </motion.div>
@@ -444,18 +525,42 @@ export default function CheckoutPage() {
                 {cartItems.map((item, index) => (
                   <motion.div
                     key={item.id}
-                    className="flex justify-between"
+                    className="flex flex-col"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: 0.1 * index }}
                   >
-                    <div>
-                      <p className="font-medium">{item.details?.name}</p>
-                      <p className="text-sm text-gray-400">
-                        ₹{(item.details?.pricePerDay || 0 * 83.33).toFixed(2)}/day × {item.quantity}
+                    <div className="flex justify-between">
+                      <div>
+                        <p className="font-medium">{item.details?.name || "Unknown Camera"}</p>
+                        <p className="text-sm text-gray-400">
+                          {item.rentalType === "full-day"
+                            ? "Full Day"
+                            : `Half Day (${getTimeSlotLabel(item.timeSlot)})`}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {item.startDate ? format(parseISO(item.startDate), "MMM dd, yyyy") : ""}
+                          {item.rentalType === "full-day" && item.endDate && item.startDate !== item.endDate && (
+                            <> - {format(parseISO(item.endDate), "MMM dd, yyyy")}</>
+                          )}
+                        </p>
+                      </div>
+                      <p className="font-medium">
+                        $
+                        {item.rentalType === "half-day"
+                          ? ((item.details?.pricePerDay || 0) * 0.6).toFixed(2)
+                          : (
+                              (item.details?.pricePerDay || 0) *
+                              (item.startDate && item.endDate
+                                ? Math.ceil(
+                                    Math.abs(parseISO(item.endDate).getTime() - parseISO(item.startDate).getTime()) /
+                                      (1000 * 60 * 60 * 24),
+                                  )
+                                : 1)
+                            ).toFixed(2)}
                       </p>
                     </div>
-                    <p className="font-medium">₹{((item.details?.pricePerDay || 0) * item.quantity * 83.33).toFixed(2)}</p>
+                    {index < cartItems.length - 1 && <Separator className="my-3 bg-gray-700" />}
                   </motion.div>
                 ))}
 
@@ -463,23 +568,23 @@ export default function CheckoutPage() {
 
                 <div className="flex justify-between text-gray-300">
                   <p>Subtotal</p>
-                  <p className="font-medium">₹{(subtotal * 83.33).toFixed(2)}</p>
+                  <p className="font-medium">${subtotal.toFixed(2)}</p>
                 </div>
                 <div className="flex justify-between text-gray-300">
                   <p>Tax (10%)</p>
-                  <p className="font-medium">₹{(tax * 83.33).toFixed(2)}</p>
+                  <p className="font-medium">${tax.toFixed(2)}</p>
                 </div>
 
                 <Separator className="bg-gray-700" />
 
                 <div className="flex justify-between font-bold">
                   <p>Total</p>
-                  <p className="text-purple-400">₹{(total * 83.33).toFixed(2)}</p>
+                  <p className="text-purple-400">${total.toFixed(2)}</p>
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-gray-700 flex items-center justify-center text-xs text-gray-400">
                   <ShieldCheck className="h-4 w-4 mr-2 text-green-400" />
-                  Secure checkout powered by Razorpay
+                  Secure checkout powered by PhonePe
                 </div>
               </CardContent>
             </Card>

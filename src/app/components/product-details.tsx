@@ -1,8 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { ArrowRight } from "lucide-react"
 import Image from "next/image"
 import type { Camera } from "@/lib/types"
 import { useCart } from "@/lib/use-cart"
@@ -13,62 +11,104 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Check, ChevronLeft, ShoppingCart, Star, Clock, AlertCircle } from "lucide-react"
+import { Check, ChevronLeft, ShoppingCart, Clock, AlertCircle } from "lucide-react"
 import { motion } from "framer-motion"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { format, addDays, isBefore, isAfter, isSameDay } from "date-fns"
+import Link from "next/link"
 
 interface ProductDetailsProps {
   camera: Camera
 }
 
+// Define proper types for reserved dates
+interface ReservedDate {
+  _id: string
+  cameraId: string
+  startDate: string
+  endDate: string
+  isFullDay: boolean
+  timeSlot?: "morning" | "afternoon" | "evening"
+}
+
 export function ProductDetails({ camera }: ProductDetailsProps) {
-  const { addToCart,cart } = useCart()
+  const { addToCart } = useCart()
   const { toast } = useToast()
-  const [startDate, setStartDate] = useState<Date | undefined>(new Date())
-  const [endDate, setEndDate] = useState<Date | undefined>(addDays(new Date(), 1))
+
+  // Use state to prevent hydration errors
+  const [isClient, setIsClient] = useState(false)
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   const [rentalType, setRentalType] = useState<"half-day" | "full-day">("full-day")
   const [timeSlot, setTimeSlot] = useState<"morning" | "afternoon" | "evening">("morning")
   const [addedToCart, setAddedToCart] = useState(false)
-  const [blockedDates, setBlockedDates] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const router = useRouter()
+  const [reservedDates, setReservedDates] = useState<ReservedDate[]>([])
+  // const [isLoading, setIsLoading] = useState(true)
 
-  const handleCheckout = () => {
-    router.push("/cart/checkout")
-  }
+  // Initialize dates after hydration to prevent mismatch
+  useEffect(() => {
+    setIsClient(true)
+    const today = new Date()
+    setStartDate(today)
+    setEndDate(addDays(today, 1))
+  }, [])
 
   useEffect(() => {
-    // Fetch blocked dates for this camera
-    const fetchBlockedDates = async () => {
+    // Only fetch reserved dates after component has mounted
+    if (!isClient) return
+
+    // Fetch reserved dates for this camera
+    const fetchReservedDates = async () => {
       try {
-        const response = await fetch(`/api/blocked-dates?cameraId=${camera.id}`)
+        const response = await fetch(`/api/reserved-dates?cameraId=${camera.id}`)
         const data = await response.json()
 
         if (data.success) {
-          setBlockedDates(data.blockedDates)
+          setReservedDates(data.reservedDates)
         }
       } catch (error) {
-        console.error("Error fetching blocked dates:", error)
+        console.error("Error fetching reserved dates:", error)
       } finally {
-        setIsLoading(false)
+        // setIsLoading(false)
       }
     }
 
-    fetchBlockedDates()
-  }, [camera.id])
+    fetchReservedDates()
+  }, [camera.id, isClient])
 
   const handleAddToCart = () => {
+    if (!startDate) {
+      toast({
+        title: "Date required",
+        description: "Please select a start date for your rental.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Check if selected dates are available
+    if (
+      isDateReserved(startDate) ||
+      (rentalType === "full-day" && endDate && isDateRangeReserved(startDate, endDate))
+    ) {
+      toast({
+        title: "Date unavailable",
+        description: "The selected date or date range is not available for rental.",
+        variant: "destructive",
+      })
+      return
+    }
+
     // Create cart item with rental details
     const cartItem = {
       id: camera.id,
       quantity: 1,
       rentalType,
       timeSlot: rentalType === "half-day" ? timeSlot : undefined,
-      startDate: startDate?.toISOString(),
-      endDate: endDate?.toISOString(),
+      startDate: startDate.toISOString(),
+      endDate: endDate?.toISOString() || startDate.toISOString(),
     }
 
     addToCart(cartItem)
@@ -85,71 +125,86 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
     }, 2000)
   }
 
-  // Check if a date is blocked
-  const isDateBlocked = (date: Date) => {
+  // Check if a date is reserved
+  const isDateReserved = (date: Date): boolean => {
     // Check if date is in the past
     if (isBefore(date, new Date()) && !isSameDay(date, new Date())) {
       return true
     }
 
-    // For full-day rentals, check if the date is fully blocked
+    // For full-day rentals, check if the date is fully reserved
     if (rentalType === "full-day") {
-      return blockedDates.some((blockedDate) => {
-        const start = new Date(blockedDate.startDate)
-        const end = new Date(blockedDate.endDate)
+      return reservedDates.some((reservedDate) => {
+        const start = new Date(reservedDate.startDate)
+        const end = new Date(reservedDate.endDate)
         return (
           (isSameDay(date, start) || isAfter(date, start)) &&
           (isSameDay(date, end) || isBefore(date, end)) &&
-          blockedDate.isFullDay
+          reservedDate.isFullDay
         )
       })
     }
 
-    // For half-day rentals, check if the specific time slot is blocked
-    return blockedDates.some((blockedDate) => {
-      const start = new Date(blockedDate.startDate)
-      const end = new Date(blockedDate.endDate)
+    // For half-day rentals, check if the specific time slot is reserved
+    return reservedDates.some((reservedDate) => {
+      const start = new Date(reservedDate.startDate)
+      const end = new Date(reservedDate.endDate)
 
       if ((isSameDay(date, start) || isAfter(date, start)) && (isSameDay(date, end) || isBefore(date, end))) {
-        // If it's a full-day block, the date is blocked
-        if (blockedDate.isFullDay) {
+        // If it's a full-day reservation, the date is reserved
+        if (reservedDate.isFullDay) {
           return true
         }
 
-        // If it's a half-day block, check if the time slot matches
-        return blockedDate.timeSlot === timeSlot
+        // If it's a half-day reservation, check if the time slot matches
+        return reservedDate.timeSlot === timeSlot
       }
 
       return false
     })
   }
 
-  // Get tooltip content for a blocked date
-  const getBlockedDateTooltip = (date: Date) => {
-    const matchingBlocks = blockedDates.filter((blockedDate) => {
-      const start = new Date(blockedDate.startDate)
-      const end = new Date(blockedDate.endDate)
+  // Check if a date range has any reserved dates
+  const isDateRangeReserved = (start: Date, end: Date): boolean => {
+    // Create an array of dates between start and end
+    const dates = []
+    const currentDate = new Date(start)
+
+    while (currentDate <= end) {
+      dates.push(new Date(currentDate))
+      currentDate.setDate(currentDate.getDate() + 1)
+    }
+
+    // Check if any date in the range is reserved
+    return dates.some((date) => isDateReserved(date))
+  }
+
+  // Get tooltip content for a reserved date
+  const getReservedDateTooltip = (date: Date): string => {
+    const matchingReservations = reservedDates.filter((reservedDate) => {
+      const start = new Date(reservedDate.startDate)
+      const end = new Date(reservedDate.endDate)
       return (isSameDay(date, start) || isAfter(date, start)) && (isSameDay(date, end) || isBefore(date, end))
     })
 
-    if (matchingBlocks.length === 0) {
+    if (matchingReservations.length === 0) {
       return "Not available"
     }
 
-    if (matchingBlocks.some((block) => block.isFullDay)) {
-      return "Fully booked"
+    if (matchingReservations.some((reservation) => reservation.isFullDay)) {
+      return "Fully reserved"
     }
 
-    const blockedSlots = matchingBlocks.map((block) => block.timeSlot)
-    if (blockedSlots.length === 3) {
-      return "Fully booked"
+    const reservedSlots = matchingReservations.map((reservation) => reservation.timeSlot).filter(Boolean) as string[]
+    if (reservedSlots.length === 3) {
+      return "Fully reserved"
     }
 
-    return `Booked for: ${blockedSlots.join(", ")}`
+    return `Reserved for: ${reservedSlots.join(", ")}`
   }
 
   // Calculate total price
-  const calculateTotalPrice = () => {
+  const calculateTotalPrice = (): number => {
     if (!startDate) return camera.pricePerDay
 
     if (rentalType === "half-day") {
@@ -169,16 +224,46 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
     return camera.pricePerDay * diffDays
   }
 
+  // Show loading state during hydration
+  if (!isClient) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="animate-pulse">
+          <div className="h-4 bg-gray-700 rounded w-1/4 mb-4"></div>
+          <div className="h-64 bg-gray-700 rounded-lg mb-2"></div>
+          <div className="grid grid-cols-4 gap-2">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-16 bg-gray-700 rounded-md"></div>
+            ))}
+          </div>
+        </div>
+        <div className="animate-pulse">
+          <div className="h-6 bg-gray-700 rounded w-3/4 mb-4"></div>
+          <div className="h-4 bg-gray-700 rounded w-1/2 mb-6"></div>
+          <div className="h-10 bg-gray-700 rounded mb-6"></div>
+          <div className="h-40 bg-gray-700 rounded-lg mb-6"></div>
+          <div className="h-64 bg-gray-700 rounded-lg"></div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
-        <a href="/" className="inline-flex items-center text-gray-300 mb-4 hover:text-white">
+        <Link href="/" className="inline-flex items-center text-gray-300 mb-4 hover:text-white">
           <ChevronLeft className="h-4 w-4 mr-1" />
           Back to cameras
-        </a>
+        </Link>
 
         <div className="relative aspect-[4/3] w-full rounded-lg overflow-hidden shadow-xl">
-          <Image src={camera.image || "/placeholder.svg"} alt={camera.name} fill className="object-cover" priority />
+          <Image
+            src={camera.image || "/placeholder.svg?height=400&width=600"}
+            alt={camera.name}
+            fill
+            className="object-cover"
+            priority
+          />
           {camera.isNew && (
             <Badge className="absolute top-4 right-4 bg-gradient-to-r from-green-400 to-emerald-500 text-white">
               New
@@ -195,7 +280,7 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
               transition={{ duration: 0.2 }}
             >
               <Image
-                src={camera.image || "/placeholder.svg"}
+                src={camera.image || "/placeholder.svg?height=100&width=100"}
                 alt={`${camera.name} thumbnail ${i + 1}`}
                 fill
                 className="object-cover"
@@ -236,7 +321,7 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
         </div> */}
 
         <div className="flex items-baseline mb-6">
-          <span className="text-3xl font-bold text-white">₹{camera.pricePerDay}</span>
+          <span className="text-3xl font-bold text-white">${camera.pricePerDay}</span>
           <span className="text-gray-400 ml-1">/day</span>
         </div>
 
@@ -251,7 +336,7 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
               Specifications
             </TabsTrigger>
             <TabsTrigger value="includes" className="data-[state=active]:bg-gray-700">
-              What's Included
+              What&apos;s Included
             </TabsTrigger>
           </TabsList>
 
@@ -359,48 +444,68 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
                 </div>
               )}
 
+              <div className="mt-4">
+                <h3 className="text-sm font-medium text-gray-400 mb-2">Calendar Legend</h3>
+                <div className="flex flex-wrap gap-4">
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 rounded-full bg-purple-600 mr-2"></div>
+                    <span className="text-sm text-gray-300">Selected</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 rounded-full bg-red-900/30 mr-2"></div>
+                    <span className="text-sm text-gray-300">Reserved</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 rounded-full bg-gray-700 mr-2"></div>
+                    <span className="text-sm text-gray-300">Today</span>
+                  </div>
+                </div>
+              </div>
+
               {rentalType === "half-day" ? (
                 <div>
                   <h3 className="text-sm font-medium text-gray-400 mb-2">Select Date</h3>
                   <TooltipProvider>
-                    <Calendar
-                      mode="single"
-                      selected={startDate}
-                      onSelect={setStartDate}
-                      className="rounded-md border border-gray-700 bg-gray-800 text-white"
-                      disabled={(date) => isDateBlocked(date)}
-                      classNames={{
-                        day_selected: "bg-purple-600 text-white hover:bg-purple-700",
-                        day_today: "bg-gray-700 text-white",
-                      }}
-                      components={{
-                        DayContent: (props) => {
-                          const isBlocked = isDateBlocked(props.date)
+                    {startDate && (
+                      <Calendar
+                        mode="single"
+                        selected={startDate}
+                        onSelect={(date) => date && setStartDate(date)}
+                        className="rounded-md border border-gray-700 bg-gray-800 text-white"
+                        disabled={(date) => isDateReserved(date)}
+                        classNames={{
+                          day_selected: "bg-purple-600 text-white hover:bg-purple-700",
+                          day_today: "bg-gray-700 text-white",
+                        }}
+                        components={{
+                          DayContent: (props) => {
+                            const isReserved = isDateReserved(props.date)
 
-                          return (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div
-                                  className={`relative w-full h-full flex items-center justify-center ${
-                                    isBlocked ? "bg-red-900/30 rounded-full cursor-not-allowed" : ""
-                                  }`}
-                                >
-                                  {props.date.getDate()}
-                                  {isBlocked && (
-                                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-red-500 rounded-full"></div>
-                                  )}
-                                </div>
-                              </TooltipTrigger>
-                              {isBlocked && (
-                                <TooltipContent side="bottom" className="bg-gray-900 text-white border-gray-700">
-                                  {getBlockedDateTooltip(props.date)}
-                                </TooltipContent>
-                              )}
-                            </Tooltip>
-                          )
-                        },
-                      }}
-                    />
+                            return (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div
+                                    className={`relative w-full h-full flex items-center justify-center ${
+                                      isReserved ? "bg-red-900/30 rounded-full cursor-not-allowed" : ""
+                                    }`}
+                                  >
+                                    {props.date.getDate()}
+                                    {isReserved && (
+                                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-red-500 rounded-full"></div>
+                                    )}
+                                  </div>
+                                </TooltipTrigger>
+                                {isReserved && (
+                                  <TooltipContent side="bottom" className="bg-gray-900 text-white border-gray-700">
+                                    {getReservedDateTooltip(props.date)}
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                            )
+                          },
+                        }}
+                      />
+                    )}
                   </TooltipProvider>
                 </div>
               ) : (
@@ -408,97 +513,102 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
                   <div>
                     <h3 className="text-sm font-medium text-gray-400 mb-2">Start Date</h3>
                     <TooltipProvider>
-                      <Calendar
-                        mode="single"
-                        selected={startDate}
-                        onSelect={(date) => {
-                          setStartDate(date)
-                          // If end date is before new start date, update it
-                          if (endDate && date && isBefore(endDate, date)) {
-                            setEndDate(date)
-                          }
-                        }}
-                        className="rounded-md border border-gray-700 bg-gray-800 text-white"
-                        disabled={(date) => isDateBlocked(date)}
-                        classNames={{
-                          day_selected: "bg-purple-600 text-white hover:bg-purple-700",
-                          day_today: "bg-gray-700 text-white",
-                        }}
-                        components={{
-                          DayContent: (props) => {
-                            const isBlocked = isDateBlocked(props.date)
+                      {startDate && (
+                        <Calendar
+                          mode="single"
+                          selected={startDate}
+                          onSelect={(date) => {
+                            if (!date) return
+                            setStartDate(date)
+                            // If end date is before new start date, update it
+                            if (endDate && isBefore(endDate, date)) {
+                              setEndDate(date)
+                            }
+                          }}
+                          className="rounded-md border border-gray-700 bg-gray-800 text-white"
+                          disabled={(date) => isDateReserved(date)}
+                          classNames={{
+                            day_selected: "bg-purple-600 text-white hover:bg-purple-700",
+                            day_today: "bg-gray-700 text-white",
+                          }}
+                          components={{
+                            DayContent: (props) => {
+                              const isReserved = isDateReserved(props.date)
 
-                            return (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div
-                                    className={`relative w-full h-full flex items-center justify-center ${
-                                      isBlocked ? "bg-red-900/30 rounded-full cursor-not-allowed" : ""
-                                    }`}
-                                  >
-                                    {props.date.getDate()}
-                                    {isBlocked && (
-                                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-red-500 rounded-full"></div>
-                                    )}
-                                  </div>
-                                </TooltipTrigger>
-                                {isBlocked && (
-                                  <TooltipContent side="bottom" className="bg-gray-900 text-white border-gray-700">
-                                    {getBlockedDateTooltip(props.date)}
-                                  </TooltipContent>
-                                )}
-                              </Tooltip>
-                            )
-                          },
-                        }}
-                      />
+                              return (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div
+                                      className={`relative w-full h-full flex items-center justify-center ${
+                                        isReserved ? "bg-red-900/30 rounded-full cursor-not-allowed" : ""
+                                      }`}
+                                    >
+                                      {props.date.getDate()}
+                                      {isReserved && (
+                                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-red-500 rounded-full"></div>
+                                      )}
+                                    </div>
+                                  </TooltipTrigger>
+                                  {isReserved && (
+                                    <TooltipContent side="bottom" className="bg-gray-900 text-white border-gray-700">
+                                      {getReservedDateTooltip(props.date)}
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              )
+                            },
+                          }}
+                        />
+                      )}
                     </TooltipProvider>
                   </div>
 
                   <div>
                     <h3 className="text-sm font-medium text-gray-400 mb-2">End Date</h3>
                     <TooltipProvider>
-                      <Calendar
-                        mode="single"
-                        selected={endDate}
-                        onSelect={setEndDate}
-                        className="rounded-md border border-gray-700 bg-gray-800 text-white"
-                        disabled={(date) => isDateBlocked(date) || (startDate ? isBefore(date, startDate) : false)}
-                        classNames={{
-                          day_selected: "bg-purple-600 text-white hover:bg-purple-700",
-                          day_today: "bg-gray-700 text-white",
-                        }}
-                        components={{
-                          DayContent: (props) => {
-                            const isBlocked =
-                              isDateBlocked(props.date) || (startDate ? isBefore(props.date, startDate) : false)
+                      {startDate && endDate && (
+                        <Calendar
+                          mode="single"
+                          selected={endDate}
+                          onSelect={(date) => date && setEndDate(date)}
+                          className="rounded-md border border-gray-700 bg-gray-800 text-white"
+                          disabled={(date) => isDateReserved(date) || (startDate ? isBefore(date, startDate) : false)}
+                          classNames={{
+                            day_selected: "bg-purple-600 text-white hover:bg-purple-700",
+                            day_today: "bg-gray-700 text-white",
+                          }}
+                          components={{
+                            DayContent: (props) => {
+                              const isReserved =
+                                isDateReserved(props.date) || (startDate ? isBefore(props.date, startDate) : false)
 
-                            return (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div
-                                    className={`relative w-full h-full flex items-center justify-center ${
-                                      isBlocked ? "bg-red-900/30 rounded-full cursor-not-allowed" : ""
-                                    }`}
-                                  >
-                                    {props.date.getDate()}
-                                    {isBlocked && (
-                                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-red-500 rounded-full"></div>
-                                    )}
-                                  </div>
-                                </TooltipTrigger>
-                                {isBlocked && (
-                                  <TooltipContent side="bottom" className="bg-gray-900 text-white border-gray-700">
-                                    {startDate && isBefore(props.date, startDate)
-                                      ? "Must be after start date"
-                                      : getBlockedDateTooltip(props.date)}
-                                  </TooltipContent>
-                                )}
-                              </Tooltip>
-                            )
-                          },
-                        }}
-                      />
+                              return (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div
+                                      className={`relative w-full h-full flex items-center justify-center ${
+                                        isReserved ? "bg-red-900/30 rounded-full cursor-not-allowed" : ""
+                                      }`}
+                                    >
+                                      {props.date.getDate()}
+                                      {isReserved && (
+                                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-red-500 rounded-full"></div>
+                                      )}
+                                    </div>
+                                  </TooltipTrigger>
+                                  {isReserved && (
+                                    <TooltipContent side="bottom" className="bg-gray-900 text-white border-gray-700">
+                                      {startDate && isBefore(props.date, startDate)
+                                        ? "Must be after start date"
+                                        : getReservedDateTooltip(props.date)}
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              )
+                            },
+                          }}
+                        />
+                      )}
                     </TooltipProvider>
                   </div>
                 </div>
@@ -521,7 +631,7 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
               </div>
               <div className="flex justify-between font-bold text-lg mt-4 pt-4 border-t border-gray-600">
                 <span>Total:</span>
-                <span className="text-purple-400">₹{calculateTotalPrice().toFixed(2)}</span>
+                <span className="text-purple-400">${calculateTotalPrice().toFixed(2)}</span>
               </div>
             </div>
 
@@ -532,13 +642,18 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
               </div>
             )}
           </CardContent>
-                  <CardFooter>
-          <div className="w-full space-y-3">
-            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+          <CardFooter>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full">
               <Button
                 className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
                 onClick={handleAddToCart}
-                disabled={!camera.available || addedToCart || isDateBlocked(startDate!)}
+                disabled={
+                  !camera.available ||
+                  addedToCart ||
+                  !startDate ||
+                  isDateReserved(startDate) ||
+                  (rentalType === "full-day" && endDate && isDateRangeReserved(startDate, endDate))
+                }
               >
                 {addedToCart ? (
                   <>
@@ -551,19 +666,7 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
                 )}
               </Button>
             </motion.div>
-
-            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-              <Button
-                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-                onClick={handleCheckout}
-                disabled={cart.length===0}
-              >
-                <ArrowRight className="mr-2 h-4 w-4" />
-                Proceed to Checkout
-              </Button>
-            </motion.div>
-          </div>
-        </CardFooter>
+          </CardFooter>
         </Card>
       </motion.div>
     </div>

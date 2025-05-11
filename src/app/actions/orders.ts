@@ -3,7 +3,7 @@
 import { connectToMongoose } from "@/lib/mongodb"
 import Order from "@/models/Order"
 import User from "@/models/User"
-import ReservedDate from "@/models/ReservedDate"
+import BlockedDate from "@/models/BlockedDate"
 import { sendWhatsAppTextMessage } from "@/lib/whatsapp"
 
 interface OrderItem {
@@ -40,9 +40,9 @@ export async function createOrder(orderData: OrderData) {
     // Find user in database
     let userId = orderData.userId
     if (orderData.userEmail && !userId) {
-      const user = await User.findOne({ email: orderData.userEmail })
+      const user = await User.findOne({ email: orderData.userEmail }).exec()
       if (user) {
-        userId = user._id
+        userId = user._id.toString()
       }
     }
 
@@ -62,7 +62,7 @@ export async function createOrder(orderData: OrderData) {
       startDate: new Date(orderData.startDate),
       endDate: new Date(orderData.endDate),
       status: "confirmed",
-      paymentMethod: "PhonePe",
+      paymentMethod: "RazorPay",
       paymentStatus: "paid",
     })
 
@@ -70,7 +70,7 @@ export async function createOrder(orderData: OrderData) {
 
     // Create reserved dates for each camera in the order
     for (const item of orderData.items) {
-      const reservedDate = new ReservedDate({
+      const blockedDate = new BlockedDate({
         cameraId: item.cameraId,
         orderId: newOrder._id,
         startDate: new Date(orderData.startDate),
@@ -79,7 +79,7 @@ export async function createOrder(orderData: OrderData) {
         timeSlot: orderData.timeSlot,
       })
 
-      await reservedDate.save()
+      await blockedDate.save()
     }
 
     // Create a message for WhatsApp
@@ -92,7 +92,7 @@ export async function createOrder(orderData: OrderData) {
 
 Hello ${orderData.userName || "Valued Customer"},
 
-Your order #${orderId} has been confirmed. Thank you for choosing CameraRent!
+Your order #${orderId} has been confirmed. Thank you for choosing Muzzu Rentals!
 
 *Order Details:*
 ${whatsappItems.map((item) => `• ${item.name} (Qty: ${item.quantity})`).join("\n")}
@@ -107,7 +107,7 @@ If you have any questions, please reply to this message or call us at +91 98765 
 
 Thank you for your business!
 
-*CameraRent Team*`
+*Muzzu Rentals*`
 
     // Send the WhatsApp message
     const whatsappResult = await sendWhatsAppTextMessage(orderData.phoneNumber, message)

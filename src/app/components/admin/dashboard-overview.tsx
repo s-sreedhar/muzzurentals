@@ -60,7 +60,7 @@ export function DashboardOverview() {
             <CardHeader>
               <CardTitle>Weekly Income</CardTitle>
               <CardDescription className="text-gray-400">
-                Comparison of current and previous week's income
+                Comparison of current and previous week&apos; income
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -73,7 +73,7 @@ export function DashboardOverview() {
             <CardHeader>
               <CardTitle>Monthly Income</CardTitle>
               <CardDescription className="text-gray-400">
-                Comparison of current and previous month's income
+                Comparison of current and previous month&apos;s income
               </CardDescription>
             </CardHeader>
             <CardContent>

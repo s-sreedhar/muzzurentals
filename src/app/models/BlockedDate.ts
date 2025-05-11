@@ -1,4 +1,4 @@
-import mongoose, { Schema, type Document } from "mongoose"
+import mongoose, { Schema, type Document, type Model } from "mongoose"
 
 export interface IBlockedDate extends Document {
   cameraId: string
@@ -11,7 +11,7 @@ export interface IBlockedDate extends Document {
   updatedAt: Date
 }
 
-const BlockedDateSchema: Schema = new Schema(
+const BlockedDateSchema: Schema<IBlockedDate> = new Schema(
   {
     cameraId: { type: String, required: true },
     startDate: { type: Date, required: true },
@@ -20,10 +20,13 @@ const BlockedDateSchema: Schema = new Schema(
     isFullDay: { type: Boolean, required: true, default: true },
     timeSlot: { type: String, enum: ["morning", "afternoon", "evening"] },
   },
-  { timestamps: true },
+  { timestamps: true }
 )
 
-// Create a compound index to efficiently query blocked dates for a camera
+// Compound index for efficient querying
 BlockedDateSchema.index({ cameraId: 1, startDate: 1, endDate: 1 })
 
-export default mongoose.models.BlockedDate || mongoose.model<IBlockedDate>("BlockedDate", BlockedDateSchema)
+const BlockedDate: Model<IBlockedDate> =
+  mongoose.models.BlockedDate || mongoose.model<IBlockedDate>("BlockedDate", BlockedDateSchema)
+
+export default BlockedDate

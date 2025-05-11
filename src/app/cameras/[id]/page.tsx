@@ -1,13 +1,14 @@
-import { notFound } from "next/navigation"
-import { cameras } from "@/lib/data"
-import { Header } from "@/components/header"
-import { ProductDetails } from "@/components/product-details"
+import { notFound } from "next/navigation";
+import { cameras } from "@/lib/data";
+import { Header } from "@/components/header";
+import { ProductDetails } from "@/components/product-details";
 
-export default function CameraPage({ params }: { params: { id: string } }) {
-  const camera = cameras.find((c) => c.id === params.id)
+export default async function CameraPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const camera = cameras.find((c) => c.id === id);
 
   if (!camera) {
-    return notFound()
+    notFound();
   }
 
   return (
@@ -17,5 +18,5 @@ export default function CameraPage({ params }: { params: { id: string } }) {
         <ProductDetails camera={camera} />
       </div>
     </main>
-  )
+  );
 }

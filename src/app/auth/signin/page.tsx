@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { signIn } from "next-auth/react"
-import { useRouter, useSearchParams } from "next/navigation"
+import {  useSearchParams } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"

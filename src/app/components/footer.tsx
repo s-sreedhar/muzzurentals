@@ -45,18 +45,18 @@ export function Footer() {
               <div className="flex items-start">
                 <MapPin className="h-5 w-5 mr-2 mt-0.5 text-gray-400" />
                 <div>
-                  <p className="text-gray-300">123 Main Street</p>
-                  <p className="text-gray-300">Gudur, Andhra Pradesh 524101</p>
-                  <p className="text-gray-300">India</p>
+                  <p className="text-gray-300">15/59, 2nd street</p>
+                  <p className="text-gray-300">Ranipeta, Gudur, Tirupati Dist</p>
+                  <p className="text-gray-300">Andhra Pradesh, India - 524101</p>
                 </div>
               </div>
               <div className="flex items-center">
                 <Phone className="h-5 w-5 mr-2 text-gray-400" />
-                <p className="text-gray-300">+91 98765 43210</p>
+                <p className="text-gray-300">+91 93925 53149</p>
               </div>
               <div className="flex items-center">
                 <Mail className="h-5 w-5 mr-2 text-gray-400" />
-                <p className="text-gray-300">info@muzzurentals.com</p>
+                <p className="text-gray-300">muzameelpatan123@gmail.com</p>
               </div>
             </div>
           </div>

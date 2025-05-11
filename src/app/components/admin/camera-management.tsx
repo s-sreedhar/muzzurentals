@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Loader2, Plus, Pencil, Trash2, X, Check } from "lucide-react"
 import { motion } from "framer-motion"
 import { Switch } from "@/components/ui/switch"
+import Image from "next/image"
 import {
   Dialog,
   DialogContent,
@@ -259,7 +260,7 @@ export function CamerasManagement() {
                       className="bg-gray-700 rounded-lg overflow-hidden border border-gray-600"
                     >
                       <div className="relative h-48 bg-gray-600">
-                        <img
+                        <Image
                           src={camera.image || "/placeholder.svg"}
                           alt={camera.name}
                           className="w-full h-full object-cover"

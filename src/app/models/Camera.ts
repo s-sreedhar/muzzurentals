@@ -1,4 +1,4 @@
-import mongoose, { Schema, type Document } from "mongoose"
+import mongoose, { Schema, type Document, type Model } from "mongoose"
 
 export interface ICamera extends Document {
   id: string
@@ -9,14 +9,12 @@ export interface ICamera extends Document {
   pricePerDay: number
   image: string
   available: boolean
-  isNew: boolean
-  rating: number
-  reviews: number
+  // isNew: boolean // Indicates if the camera is new
   specs: string[]
   included: string[]
 }
 
-const CameraSchema: Schema = new Schema({
+const CameraSchema: Schema<ICamera> = new Schema({
   id: { type: String, required: true, unique: true },
   name: { type: String, required: true },
   brand: { type: String, required: true },
@@ -25,11 +23,11 @@ const CameraSchema: Schema = new Schema({
   pricePerDay: { type: Number, required: true },
   image: { type: String, required: true },
   available: { type: Boolean, required: true, default: true },
-  isNew: { type: Boolean, required: true, default: false },
-  rating: { type: Number, required: true, default: 0 },
-  reviews: { type: Number, required: true, default: 0 },
+  // isNew: { type: Boolean, required: true, default: false }, // Schema definition for isNew
   specs: { type: [String], required: true, default: [] },
   included: { type: [String], required: true, default: [] },
 })
 
-export default mongoose.models.Camera || mongoose.model<ICamera>("Camera", CameraSchema)
+const Camera: Model<ICamera> = mongoose.models.Camera || mongoose.model<ICamera>("Camera", CameraSchema)
+
+export default Camera

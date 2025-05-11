@@ -1,9 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
+import { authOptions } from "@/lib/auth-options"
 import { connectToMongoose } from "@/lib/mongodb"
 import Order from "@/models/Order"
-import { startOfWeek, endOfWeek, subWeeks, format, addDays, startOfMonth, endOfMonth, subMonths } from "date-fns"
+import { startOfWeek, subWeeks, format, addDays, startOfMonth, endOfMonth, subMonths } from "date-fns"
 
 // List of admin emails
 const ADMIN_EMAILS = ["admin@example.com", "admin2@example.com"] // Replace with actual admin emails
@@ -30,11 +30,11 @@ export async function GET(request: NextRequest) {
     if (period === "weekly") {
       // Current week
       const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 }) // Monday
-      const currentWeekEnd = endOfWeek(new Date(), { weekStartsOn: 1 }) // Sunday
+    //   const currentWeekEnd = endOfWeek(new Date(), { weekStartsOn: 1 }) // Sunday
 
       // Previous week
       const previousWeekStart = subWeeks(currentWeekStart, 1)
-      const previousWeekEnd = subWeeks(currentWeekEnd, 1)
+    //   const previousWeekEnd = subWeeks(currentWeekEnd, 1)
 
       // Generate labels for days of the week
       labels = Array.from({ length: 7 }, (_, i) => {
