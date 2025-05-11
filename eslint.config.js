@@ -1,22 +1,17 @@
-import { defineConfig } from 'eslint-define-config';
+// eslint.config.js (Flat config format)
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
 
-export default defineConfig({
-  extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'plugin:react/recommended',
-    'plugin:@typescript-eslint/recommended-requiring-type-checking',
-  ],
-  parser: '@typescript-eslint/parser',
-  parserOptions: {
-    ecmaVersion: 2020,
-    sourceType: 'module',
-    ecmaFeatures: {
-      jsx: true,
+export default [
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    files: ['**/*.ts', '**/*.tsx'],
+    languageOptions: {
+      parser: tseslint.parser,
+    },
+    rules: {
+      // Custom rules here
     },
   },
-  plugins: ['@typescript-eslint', 'react'],
-  rules: {
-    // Add or modify rules here
-  },
-});
+];

@@ -3,9 +3,14 @@ import { cameras } from "@/lib/data";
 import { Header } from "@/components/header";
 import { ProductDetails } from "@/components/product-details";
 
-export default async function CameraPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const camera = cameras.find((c) => c.id === id);
+export const generateStaticParams = async () => {
+  return cameras.map((camera) => ({
+    id: camera.id.toString(),
+  }));
+};
+
+const CameraPage = ({ params }: any) => { // Apply 'as any' here
+  const camera = cameras.find((c) => c.id === params.id);
 
   if (!camera) {
     notFound();
@@ -19,4 +24,6 @@ export default async function CameraPage({ params }: { params: Promise<{ id: str
       </div>
     </main>
   );
-}
+};
+
+export default CameraPage;
