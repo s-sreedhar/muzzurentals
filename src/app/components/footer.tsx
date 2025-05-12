@@ -104,8 +104,8 @@ export function Footer() {
               </div>
             </div>
           </div>
+          
         </div>
-
         <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
           <div className="flex flex-wrap justify-center gap-4 mb-4">
             <Link href="/privacy-policy" className="hover:text-white transition-colors">
@@ -124,8 +124,10 @@ export function Footer() {
               Contact Us
             </Link>
           </div>
+          
           <p>&copy; {new Date().getFullYear()} Muzzu Rentals. All rights reserved.</p>
         </div>
+        
       </div>
     </footer>
   )

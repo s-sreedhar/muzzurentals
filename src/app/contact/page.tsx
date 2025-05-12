@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import Link from "next/link"
 import { Mail, MapPin, Phone } from "lucide-react"
 
 export const metadata: Metadata = {
@@ -10,6 +11,28 @@ export default function ContactPage() {
   return (
     <div className="bg-gray-900 min-h-screen">
       <div className="container mx-auto px-4 py-12">
+        {/* Back to Home Button */}
+        <div className="mb-8 flex justify-start">
+          <Link
+            href="/"
+            className="inline-flex items-center text-white hover:text-gray-300 transition-colors duration-200"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 mr-2"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Back to Home
+          </Link>
+        </div>
+
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Contact Us</h1>
@@ -105,16 +128,16 @@ export default function ContactPage() {
                       <MapPin className="h-5 w-5 mr-3 mt-0.5 text-blue-600" />
                       <div>
                         <h3 className="font-medium text-gray-900">Our Address</h3>
-                        <p className="text-gray-600">123 Main Street</p>
-                        <p className="text-gray-600">Gudur, Andhra Pradesh 524101</p>
-                        <p className="text-gray-600">India</p>
+                        <p className="text-gray-600">15/59, 2nd street</p>
+                        <p className="text-gray-600">Ranipeta, Gudur, Tirupati Dist</p>
+                        <p className="text-gray-600">Andhra Pradesh, India - 524101</p>
                       </div>
                     </div>
                     <div className="flex items-center">
                       <Phone className="h-5 w-5 mr-3 text-blue-600" />
                       <div>
                         <h3 className="font-medium text-gray-900">Phone Number</h3>
-                        <p className="text-gray-600">+91 98765 43210</p>
+                        <p className="text-gray-600">+91 93925 53149</p>
                       </div>
                     </div>
                     <div className="flex items-center">

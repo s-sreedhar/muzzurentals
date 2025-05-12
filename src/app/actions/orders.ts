@@ -103,7 +103,7 @@ ${whatsappItems.map((item) => `• ${item.name} (Qty: ${item.quantity})`).join("
 
 Your rental equipment will be ready for pickup or delivery as per your selected option. We'll send you another message with tracking details soon.
 
-If you have any questions, please reply to this message or call us at +91 98765 43210.
+If you have any questions, please reply to this message or call us at +91 93925 53149.
 
 Thank you for your business!
 

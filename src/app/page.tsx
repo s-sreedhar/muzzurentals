@@ -18,7 +18,7 @@ export default function Home() {
     <main className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
       <Header />
       <WelcomeBanner />
-      <div className="container mx-auto px-4 py-12 bg-gray-900">
+      <div className="container mx-auto px-4 py-12 bg-gray-900" id="camera-section">
         <motion.h2
           className="text-3xl font-bold mb-8 text-center md:text-left bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400"
           initial={{ opacity: 0, y: -20 }}

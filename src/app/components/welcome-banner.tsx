@@ -2,8 +2,12 @@
 
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
+import Link from "next/link"
 
 export function WelcomeBanner() {
+  const handleBrowseCamerasClick = () => {
+    window.location.hash = "camera-section";
+  }
   return (
     <div className="bg-gradient-to-r from-gray-900 via-purple-900 to-gray-900 text-white relative overflow-hidden">
       {/* Animated background elements */}
@@ -59,6 +63,7 @@ export function WelcomeBanner() {
           >
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button
+                onClick={handleBrowseCamerasClick}
                 size="lg"
                 className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 border-none"
               >
@@ -66,9 +71,11 @@ export function WelcomeBanner() {
               </Button>
             </motion.div>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Link href='/contact'>
               <Button size="lg" variant="outline" className="border-purple-500 text-white hover:bg-white/10">
                 Learn More
               </Button>
+              </Link>
             </motion.div>
           </motion.div>
         </div>

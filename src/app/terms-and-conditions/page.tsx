@@ -2,14 +2,35 @@ import { Metadata } from "next"
 import Link from "next/link"
 
 export const metadata: Metadata = {
-  title: "Terms and Conditions | CameraRent",
+  title: "Terms and Conditions | Muzzu Rentals",
   description: "Read our terms and conditions for using our services.",
 }
 
 export default function TermsAndConditions() {
   return (
-    <div className="bg-gray-900 min-h-screen">  
+    <div className="bg-gray-900 min-h-screen">
       <div className="container mx-auto px-4 py-12">
+        {/* Back to Home Button */}
+        <div className="mb-8 flex justify-start">
+          <Link
+            href="/"
+            className="inline-flex items-center text-white hover:text-gray-300 transition-colors duration-200"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 mr-2"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Back to Home
+          </Link>
+        </div>
         <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
           <div className="p-6 md:p-8">
             <div className="mb-8">
@@ -21,7 +42,7 @@ export default function TermsAndConditions() {
               <section className="mb-8">
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">1. Acceptance of Terms</h2>
                 <p className="text-gray-700 mb-4">
-                  By accessing or using the CameraRent website and services, you agree to be bound by these Terms and
+                  By accessing or using the Muzzu Rentals website and services, you agree to be bound by these Terms and
                   Conditions. If you do not agree with any part of these terms, you must not use our services.
                 </p>
               </section>
@@ -29,8 +50,8 @@ export default function TermsAndConditions() {
               <section className="mb-8">
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">2. Rental Services</h2>
                 <p className="text-gray-700 mb-4">
-                  CameraRent provides camera and photography equipment rental services. All equipment remains the property
-                  of CameraRent or its partners at all times.
+                  Muzzu Rentals provides camera and photography equipment rental services. All equipment remains the property
+                  of Muzzu Rentals or its partners at all times.
                 </p>
               </section>
 
@@ -72,7 +93,7 @@ export default function TermsAndConditions() {
               <section className="mb-8">
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">7. Limitation of Liability</h2>
                 <p className="text-gray-700 mb-4">
-                  CameraRent is not liable for any indirect, incidental, or consequential damages arising from the use of
+                  Muzzu Rentals is not liable for any indirect, incidental, or consequential damages arising from the use of
                   our services or equipment.
                 </p>
               </section>
@@ -89,8 +110,8 @@ export default function TermsAndConditions() {
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">9. Contact Information</h2>
                 <p className="text-gray-700">
                   For any questions regarding these Terms and Conditions, please contact us at{" "}
-                  <Link href="mailto:legal@camerarent.com" className="text-blue-600 hover:underline">
-                    legal@camerarent.com
+                  <Link href="mailto:legal@muzzurentals.com" className="text-blue-600 hover:underline">
+                    legal@muzzurentals.com
                   </Link>
                   .
                 </p>

@@ -10,6 +10,28 @@ export default function PrivacyPolicy() {
   return (
     <div className="bg-gray-900 min-h-screen">
       <div className="container mx-auto px-4 py-12">
+        {/* Back to Home Button */}
+        <div className="mb-8 flex justify-start">
+          <Link
+            href="/"
+            className="inline-flex items-center text-white hover:text-gray-300 transition-colors duration-200"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 mr-2"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Back to Home
+          </Link>
+        </div>
+
         <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
           <div className="p-6 md:p-8">
             <div className="mb-8">
@@ -83,8 +105,8 @@ export default function PrivacyPolicy() {
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">7. Contact Us</h2>
                 <p className="text-gray-700">
                   If you have any questions about this Privacy Policy, please contact us at{" "}
-                  <Link href="mailto:privacy@muzzurentals.com" className="text-blue-600 hover:underline">
-                    privacy@muzzurentals.com
+                  <Link href="mailto:muzameelpatan123@gmail.com" className="text-blue-600 hover:underline">
+                    muzameelpatan123@gmail.com
                   </Link>
                   .
                 </p>

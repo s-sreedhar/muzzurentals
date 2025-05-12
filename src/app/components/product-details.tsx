@@ -321,7 +321,7 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
         </div> */}
 
         <div className="flex items-baseline mb-6">
-          <span className="text-3xl font-bold text-white">${camera.pricePerDay}</span>
+          <span className="text-3xl font-bold text-white">₹{camera.pricePerDay}</span>
           <span className="text-gray-400 ml-1">/day</span>
         </div>
 
@@ -631,7 +631,7 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
               </div>
               <div className="flex justify-between font-bold text-lg mt-4 pt-4 border-t border-gray-600">
                 <span>Total:</span>
-                <span className="text-purple-400">${calculateTotalPrice().toFixed(2)}</span>
+                <span className="text-purple-400">₹{calculateTotalPrice().toFixed(2)}</span>
               </div>
             </div>
 

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { AuthButton } from "@/components/auth-button"
 import { motion } from "framer-motion"
 import { ServiceAreaBanner } from "./service-area-banner"
-
+import favicon from "@/assets/favicon.ico"
 export function Header() {
   const { cart } = useCart()
   const [mounted, setMounted] = useState(false)
@@ -27,10 +27,10 @@ export function Header() {
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <Link href="/" className="flex items-center space-x-2">
           <motion.div className="relative w-10 h-10" whileHover={{ rotate: 10 }} transition={{ duration: 0.2 }}>
-            <Image src="/logo.png" alt="CameraRent Logo" fill className="object-contain" />
+            <Image src={favicon} alt="Muzzu Rentals" fill className="object-contain" />
           </motion.div>
           <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500">
-            CameraRent
+            Muzzu Rentals
           </span>
         </Link>
 

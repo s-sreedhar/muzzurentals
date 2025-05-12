@@ -22,7 +22,7 @@ export default function WhatsappFloatingIcon() {
 
   return (
     <motion.a
-      href="https://wa.me/+919876543210" // Replace with your WhatsApp number
+      href="https://wa.me/+919392553149" // Replace with your WhatsApp number
       target="_blank"
       rel="noopener noreferrer"
       className="fixed bottom-6 right-6 z-50 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg"
