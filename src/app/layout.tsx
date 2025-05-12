@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster"
 import "./globals.css"
 import type { Metadata } from "next"
 import WhatsappFloatingIcon from "./components/whatsapp-icon"
+import favicon from "@/assets/favicon.ico"
 
 export const metadata: Metadata = {
   title: "Muzzu Rentals - Professional Camera Rentals",
@@ -19,6 +20,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
+       <head>
+                <link rel="icon" href={favicon.src} />
+            </head>
       <body className="flex flex-col min-h-screen bg-gray-900 text-white">
         <AuthProvider> 
           <CartProvider>

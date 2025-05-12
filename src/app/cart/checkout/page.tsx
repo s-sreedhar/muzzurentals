@@ -485,7 +485,7 @@ export default function CheckoutPage() {
                         <Phone className="h-8 w-8 text-purple-400" />
                       </div>
                       <p className="text-gray-300">
-                        You&apos;ll be redirected to PhonePe to complete your payment of ${total.toFixed(2)}
+                        You&apos;ll be redirected to PhonePe to complete your payment of ₹{total.toFixed(2)}
                       </p>
                     </div>
                   </CardContent>
@@ -503,7 +503,7 @@ export default function CheckoutPage() {
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...
                       </>
                     ) : (
-                      `Pay with PhonePe • $${total.toFixed(2)}`
+                      `Pay with PhonePe • ₹${total.toFixed(2)}`
                     )}
                   </Button>
                 </motion.div>
@@ -546,7 +546,7 @@ export default function CheckoutPage() {
                         </p>
                       </div>
                       <p className="font-medium">
-                        $
+                        ₹
                         {item.rentalType === "half-day"
                           ? ((item.details?.pricePerDay || 0) * 0.6).toFixed(2)
                           : (
@@ -568,18 +568,18 @@ export default function CheckoutPage() {
 
                 <div className="flex justify-between text-gray-300">
                   <p>Subtotal</p>
-                  <p className="font-medium">${subtotal.toFixed(2)}</p>
+                  <p className="font-medium">₹{subtotal.toFixed(2)}</p>
                 </div>
                 <div className="flex justify-between text-gray-300">
                   <p>Tax (10%)</p>
-                  <p className="font-medium">${tax.toFixed(2)}</p>
+                  <p className="font-medium">₹{tax.toFixed(2)}</p>
                 </div>
 
                 <Separator className="bg-gray-700" />
 
                 <div className="flex justify-between font-bold">
                   <p>Total</p>
-                  <p className="text-purple-400">${total.toFixed(2)}</p>
+                  <p className="text-purple-400">₹{total.toFixed(2)}</p>
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-gray-700 flex items-center justify-center text-xs text-gray-400">

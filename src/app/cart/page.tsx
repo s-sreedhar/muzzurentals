@@ -162,7 +162,7 @@ export default function CartPage() {
                   </div>
                   <div className="ml-4 flex-grow">
                     <h4 className="font-medium text-white">{item.details?.name || "Unknown Camera"}</h4>
-                    <p className="text-gray-400">${item.details?.pricePerDay || 0}/day</p>
+                    <p className="text-gray-400">₹{item.details?.pricePerDay || 0}/day</p>
                     <div className="mt-2 space-y-1 text-sm text-gray-300">
                       <p>Rental Type: {item.rentalType === "full-day" ? "Full Day" : "Half Day"}</p>
                       {item.rentalType === "half-day" && item.timeSlot && (
@@ -178,7 +178,7 @@ export default function CartPage() {
                   </div>
                   <div className="mt-4 md:mt-0 md:ml-4 flex flex-col items-end">
                     <div className="text-lg font-bold text-purple-400">
-                      $
+                      ₹
                       {item.rentalType === "half-day"
                         ? ((item.details?.pricePerDay || 0) * 0.6).toFixed(2)
                         : ((item.details?.pricePerDay || 0) *
@@ -210,16 +210,16 @@ export default function CartPage() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-300">Subtotal:</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>₹{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-300">Tax (10%):</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span>₹{tax.toFixed(2)}</span>
                 </div>
                 <Separator className="my-2 bg-gray-700" />
                 <div className="flex justify-between font-bold">
                   <span>Total:</span>
-                  <span className="text-purple-400">${total.toFixed(2)}</span>
+                  <span className="text-purple-400">₹{total.toFixed(2)}</span>
                 </div>
               </div>
 

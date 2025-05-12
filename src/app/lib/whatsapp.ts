@@ -170,7 +170,7 @@ export async function sendWhatsAppTextMessage(phoneNumber: string, message: stri
 
 // Hello ${orderDetails.userName},
 
-// Your order #${orderDetails.orderId} has been confirmed. Thank you for choosing CameraRent!
+// Your order #${orderDetails.orderId} has been confirmed. Thank you for choosing Muzzu Rentals!
 
 // *Order Details:*
 // ${itemsList}
@@ -179,9 +179,9 @@ export async function sendWhatsAppTextMessage(phoneNumber: string, message: stri
 
 // Your rental equipment will be ready for pickup or delivery as per your selected option. We'll send you another message with tracking details soon.
 
-// If you have any questions, please reply to this message or call us at +91 98765 43210.
+// If you have any questions, please reply to this message or call us at +91 93925 53149.
 
 // Thank you for your business!
 
-// *CameraRent Team*`
+// *Muzzu Rentals Team*`
 // }
