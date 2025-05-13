@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import Link from "next/link"
-import { Mail, MapPin, Phone } from "lucide-react"
+import { Mail, MapPin, Phone, User} from "lucide-react"
 
 export const metadata: Metadata = {
   title: "Contact Us | Muzzu Rentals",
@@ -124,6 +124,13 @@ export default function ContactPage() {
                 <div className="p-6 md:p-8">
                   <h2 className="text-xl font-semibold text-gray-800 mb-4">Contact Information</h2>
                   <div className="space-y-4">
+                     <div className="flex items-start">
+                      <User className="h-5 w-5 mr-3 mt-0.5 text-blue-600" />
+                      <div>
+                        <h3 className="font-medium text-gray-900">Owner and Proprietor</h3>
+                          <p className="text-gray-600">Patan Muzameel</p>
+                      </div>
+                      </div>
                     <div className="flex items-start">
                       <MapPin className="h-5 w-5 mr-3 mt-0.5 text-blue-600" />
                       <div>
@@ -160,13 +167,13 @@ export default function ContactPage() {
                       <span className="text-gray-900 font-medium">9:00 AM - 7:00 PM</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-700">Saturday</span>
+                      <span className="text-gray-700">Saturday - Sunday</span>
                       <span className="text-gray-900 font-medium">10:00 AM - 5:00 PM</span>
                     </div>
-                    <div className="flex justify-between">
+                    {/* <div className="flex justify-between">
                       <span className="text-gray-700">Sunday</span>
                       <span className="text-gray-900 font-medium">Closed</span>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               </div>

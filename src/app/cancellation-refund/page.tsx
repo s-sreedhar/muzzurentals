@@ -103,11 +103,10 @@ export default function CancellationRefund() {
 
               <section className="mb-8">
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                  3. Early Returns
+                  3. No Return Policy
                 </h2>
                 <p className="text-gray-700 mb-4">
-                  If you return equipment earlier than the scheduled return
-                  date:
+                  We do not entertain/offer returns
                 </p>
                 <ul className="list-disc pl-5 text-gray-700 mb-4 space-y-2">
                   <li>No partial refunds will be given for early returns</li>
@@ -153,7 +152,7 @@ export default function CancellationRefund() {
                 </h2>
                 <p className="text-gray-700">
                   For any questions regarding cancellations or refunds, please
-                  contact us at{" "}
+                  contact <span className="font-medium">Patan Muzameel</span> at{" "}
                   <Link
                     href="mailto:muzameelpatan123@gmail.com"
                     className="text-blue-600 hover:underline"
