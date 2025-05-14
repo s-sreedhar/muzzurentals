@@ -114,7 +114,7 @@ export default function CancellationRefund() {
                 </ul>
               </section>
 
-              <section className="mb-8">
+              {/* <section className="mb-8">
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">
                   4. Equipment Issues
                 </h2>
@@ -132,11 +132,11 @@ export default function CancellationRefund() {
                     refund
                   </li>
                 </ul>
-              </section>
+              </section> */}
 
               <section className="mb-8">
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                  5. Force Majeure
+                  4. Force Majeure
                 </h2>
                 <p className="text-gray-700 mb-4">
                   In cases of natural disasters, extreme weather conditions, or
@@ -148,7 +148,7 @@ export default function CancellationRefund() {
 
               <section>
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                  6. Contact Us
+                  5. Contact Us
                 </h2>
                 <p className="text-gray-700">
                   For any questions regarding cancellations or refunds, please
