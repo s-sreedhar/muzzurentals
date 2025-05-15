@@ -134,7 +134,7 @@ export default function CancellationRefund() {
                 </ul>
               </section> */}
 
-              <section className="mb-8">
+              {/* <section className="mb-8">
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">
                   4. Force Majeure
                 </h2>
@@ -144,7 +144,7 @@ export default function CancellationRefund() {
                   of your rental, we will work with you to reschedule or provide
                   a full refund.
                 </p>
-              </section>
+              </section> */}
 
               <section>
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">
