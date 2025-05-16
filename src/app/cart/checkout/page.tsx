@@ -20,7 +20,9 @@ import { Loader2, Phone, ShieldCheck, Truck, MessageSquare } from "lucide-react"
 import { motion } from "framer-motion"
 import { format, parseISO } from "date-fns"
 import type { Camera } from "@/lib/types"
-import Script from "next/script";
+// import Script from "next/script";
+// import { authOptions } from "@/app/lib/auth"
+// import { getServerSession } from "next-auth/next"
 import Link from "next/link"
 // Define proper types for cart items with details
 interface CartItemWithDetails {
@@ -53,8 +55,8 @@ export default function CheckoutPage() {
   const [phoneNumber, setPhoneNumber] = useState("")
   const [whatsappSent, setWhatsappSent] = useState(false)
   const [cartItems, setCartItems] = useState<CartItemWithDetails[]>([])
-  const [subtotal, setSubtotal] = useState(0)
-  const [tax, setTax] = useState(0)
+  // const [subtotal, setSubtotal] = useState(0)
+  // const [tax, setTax] = useState(0)
   const [total, setTotal] = useState(0)
 
   // Only run client-side code after hydration
@@ -69,34 +71,27 @@ export default function CheckoutPage() {
     setCartItems(items)
 
     // Calculate totals
-    const calculatedSubtotal = items.reduce((total, item) => {
-      if (!item.details) return total
+    const calculatedTotal = items.reduce((total, item) => {
+    if (!item.details) return total
+    const basePrice = item.details.pricePerDay
 
-      const basePrice = item.details.pricePerDay
+    if (item.rentalType === "half-day") {
+      return total + basePrice * 0.6 * item.quantity
+    }
 
-      // For half-day rentals
-      if (item.rentalType === "half-day") {
-        return total + basePrice * 0.6 * item.quantity // 60% of full day price
-      }
+    if (item.startDate && item.endDate) {
+      const start = parseISO(item.startDate)
+      const end = parseISO(item.endDate)
+      const diffTime = Math.abs(end.getTime() - start.getTime())
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      return total + basePrice * diffDays * item.quantity
+    }
 
-      // For full-day rentals
-      if (item.startDate && item.endDate) {
-        const start = parseISO(item.startDate)
-        const end = parseISO(item.endDate)
-        const diffTime = Math.abs(end.getTime() - start.getTime())
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-        return total + basePrice * diffDays * item.quantity
-      }
+    return total + basePrice * item.quantity
+  }, 0)
 
-      return total + basePrice * item.quantity
-    }, 0)
-
-    const calculatedTax = calculatedSubtotal * 0.1
-
-    setSubtotal(calculatedSubtotal)
-    setTax(calculatedTax)
-    setTotal(calculatedSubtotal + calculatedTax)
-  }, [cart])
+  setTotal(calculatedTotal)
+}, [cart])
 
   // Redirect to sign-in if not authenticated
   useEffect(() => {
@@ -181,7 +176,7 @@ const handleCheckout = async (e: React.FormEvent<HTMLFormElement>) => {
   setError("");
 
   // Validate phone number
-  const phoneRegex = /^[6-9]\d{9}$/; // Indian phone number validation
+  const phoneRegex = /^[6-9]\d{9}$/;
   if (!phoneNumber || !phoneRegex.test(phoneNumber)) {
     const message = "Please enter a valid 10-digit Indian phone number";
     setError(message);
@@ -195,53 +190,87 @@ const handleCheckout = async (e: React.FormEvent<HTMLFormElement>) => {
   }
 
   try {
-    const res = await fetch("/api/razorpay/create-order", {
+    // 1. First create the order in your database
+    const orderRes = await fetch("/api/orders/create", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        amount: Math.round(total * 100), // ₹ to paise
-        currency: "INR",
+        userEmail: session.user.email,
+        userName: session.user.name,
+        items: cartItems.map(item => ({
+          productId: item.id,
+          name: item.details?.name || "Camera Rental",
+          price: item.details?.pricePerDay || 0,
+          quantity: item.quantity,
+          image: item.details?.image || "",
+          rentalType: item.rentalType,
+          timeSlot: item.timeSlot
+        })),
+        // Removed subtotal
+        total: total,
         phoneNumber,
-      }),
+        rentalType: cartItems[0]?.rentalType || "full-day",
+        timeSlot: cartItems[0]?.timeSlot || "morning",
+        startDate: cartItems[0]?.startDate || new Date(),
+        endDate: cartItems[0]?.endDate || new Date(),
+        paymentMethod: "razorpay",
+        paymentStatus: "pending"
+      })
     });
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.error || "Failed to create Razorpay order");
+    if (!orderRes.ok) {
+      const errorData = await orderRes.json();
+      throw new Error(errorData.error || "Failed to create order");
     }
 
+    const { orderId } = await orderRes.json();
+
+    // 2. Initiate Razorpay payment
+    const razorpayRes = await fetch("/api/razorpay/create-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        amount: Math.round(total * 100),
+        currency: "INR",
+        orderId,
+        phoneNumber
+      })
+    });
+
+    const razorpayData = await razorpayRes.json();
+
+    if (!razorpayRes.ok) {
+      throw new Error(razorpayData.error || "Failed to create Razorpay order");
+    }
+
+    // 3. Configure Razorpay checkout
     const options = {
       key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
-      amount: data.amount,
-      currency: data.currency || "INR",
-      name: "Your App Name",
-      description: "Payment",
-      order_id: data.id,
+      amount: razorpayData.amount,
+      currency: razorpayData.currency || "INR",
+      name: "Muzzu Rentals",
+      description: `Order #${orderId}`,
+      order_id: razorpayData.id,
       handler: async function (response: any) {
         try {
-          // Verify payment on your server
           const verificationRes = await fetch("/api/razorpay/verify-payment", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
-            }),
+              orderId
+            })
           });
 
           const verificationData = await verificationRes.json();
-
+          
           if (!verificationRes.ok || !verificationData.success) {
             throw new Error(verificationData.message || "Payment verification failed");
           }
 
-          window.location.href = `/payment-success?payment_id=${response.razorpay_payment_id}`;
+          window.location.href = `/payment-success?orderId=${orderId}`;
         } catch (error) {
           console.error("Payment verification error:", error);
           toast({
@@ -252,7 +281,9 @@ const handleCheckout = async (e: React.FormEvent<HTMLFormElement>) => {
         }
       },
       prefill: {
-        contact: phoneNumber,
+        name: session.user.name,
+        email: session.user.email,
+        contact: phoneNumber
       },
       theme: {
         color: "#3399cc",
@@ -266,6 +297,7 @@ const handleCheckout = async (e: React.FormEvent<HTMLFormElement>) => {
         description: response.error.description || "Payment failed",
         variant: "destructive",
       });
+      window.location.href = `/payment-failed?orderId=${orderId}`;
     });
     razorpay.open();
   } catch (error: any) {
@@ -510,7 +542,7 @@ const handleCheckout = async (e: React.FormEvent<HTMLFormElement>) => {
                       <Input
                         id="phone"
                         type="tel"
-                        placeholder="(123) 456-7890"
+                        placeholder="98765 43210"
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
                         required
@@ -614,16 +646,16 @@ const handleCheckout = async (e: React.FormEvent<HTMLFormElement>) => {
                   </motion.div>
                 ))}
 
-                <Separator className="bg-gray-700" />
+                {/* <Separator className="bg-gray-700" /> */}
 
-                <div className="flex justify-between text-gray-300">
+                {/* <div className="flex justify-between text-gray-300">
                   <p>Subtotal</p>
                   <p className="font-medium">₹{subtotal.toFixed(2)}</p>
-                </div>
-                <div className="flex justify-between text-gray-300">
+                </div> */}
+                {/* <div className="flex justify-between text-gray-300">
                   <p>Tax (10%)</p>
                   <p className="font-medium">₹{tax.toFixed(2)}</p>
-                </div>
+                </div> */}
 
                 <Separator className="bg-gray-700" />
 

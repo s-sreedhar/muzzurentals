@@ -1,3 +1,4 @@
+// app/api/razorpay/create-order/route.ts
 import { NextResponse } from 'next/server'
 import Razorpay from 'razorpay'
 
@@ -6,15 +7,9 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET!,
 })
 
-interface CreateOrderRequest {
-  amount: number
-  currency?: string
-  phoneNumber?: string
-}
-
 export async function POST(request: Request) {
   try {
-    const { amount, currency = 'INR' }: CreateOrderRequest = await request.json()
+    const { amount, currency = 'INR', orderId, phoneNumber } = await request.json()
 
     if (!amount || isNaN(amount)) {
       return NextResponse.json(
@@ -24,9 +19,13 @@ export async function POST(request: Request) {
     }
 
     const options = {
-      amount: amount.toString(), // Razorpay expects amount as string
+      amount: amount.toString(),
       currency,
-      receipt: `order_${Date.now()}`,
+      receipt: `order_${orderId}`,
+      notes: {
+        orderId,
+        phoneNumber
+      }
     }
 
     const order = await razorpay.orders.create(options)

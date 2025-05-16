@@ -9,23 +9,100 @@ export interface ICamera extends Document {
   pricePerDay: number
   image: string
   available: boolean
-  // isNew: boolean // Indicates if the camera is new
   specs: string[]
   included: string[]
+  createdAt: Date
+  updatedAt: Date
 }
 
-const CameraSchema: Schema<ICamera> = new Schema({
-  id: { type: String, required: true, unique: true },
-  name: { type: String, required: true },
-  brand: { type: String, required: true },
-  category: { type: String, required: true },
-  description: { type: String, required: true },
-  pricePerDay: { type: Number, required: true },
-  image: { type: String, required: true },
-  available: { type: Boolean, required: true, default: true },
-  // isNew: { type: Boolean, required: true, default: false }, // Schema definition for isNew
-  specs: { type: [String], required: true, default: [] },
-  included: { type: [String], required: true, default: [] },
+const CameraSchema: Schema<ICamera> = new Schema(
+  {
+    id: { 
+      type: String, 
+      required: true, 
+      unique: true,
+      index: true 
+    },
+    name: { 
+      type: String, 
+      required: true,
+      trim: true 
+    },
+    brand: { 
+      type: String, 
+      required: true,
+      trim: true 
+    },
+    category: { 
+      type: String, 
+      required: true,
+      trim: true 
+    },
+    description: { 
+      type: String, 
+      required: true,
+      trim: true 
+    },
+    pricePerDay: { 
+      type: Number, 
+      required: true,
+      min: 0 
+    },
+    image: { 
+      type: String, 
+      required: true,
+      trim: true 
+    },
+    available: { 
+      type: Boolean, 
+      required: true, 
+      default: true 
+    },
+    specs: { 
+      type: [String], 
+      required: true, 
+      default: [],
+      validate: {
+        validator: (v: string[]) => Array.isArray(v),
+        message: "Specs must be an array of strings"
+      } 
+    },
+    included: { 
+      type: [String], 
+      required: true, 
+      default: [],
+      validate: {
+        validator: (v: string[]) => Array.isArray(v),
+        message: "Included items must be an array of strings"
+      } 
+    }
+  },
+  { 
+    timestamps: true,  // Adds createdAt and updatedAt automatically
+    toJSON: {
+      virtuals: true,
+      transform: function(doc, ret) {
+        delete ret._id
+        delete ret.__v
+        return ret
+      }
+    },
+    toObject: {
+      virtuals: true
+    }
+  }
+)
+
+// Add index for frequently queried fields
+CameraSchema.index({ name: 'text', brand: 'text', category: 'text' })
+
+// Pre-save hook to ensure consistency
+CameraSchema.pre('save', function(next) {
+  if (this.isModified('specs') || this.isModified('included')) {
+    this.specs = this.specs.filter(item => item.trim().length > 0)
+    this.included = this.included.filter(item => item.trim().length > 0)
+  }
+  next()
 })
 
 const Camera: Model<ICamera> = mongoose.models.Camera || mongoose.model<ICamera>("Camera", CameraSchema)

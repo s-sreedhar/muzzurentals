@@ -1,55 +1,71 @@
+// app/api/razorpay/verify-payment/route.ts
 import { NextResponse } from 'next/server'
 import Razorpay from 'razorpay'
 import crypto from 'crypto'
+import Order from '@/models/Order'
+import { connectToMongoose } from '@/lib/mongodb'
+import mongoose from 'mongoose'
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID!,
   key_secret: process.env.RAZORPAY_KEY_SECRET!,
 })
 
-interface VerifyPaymentRequest {
-  razorpay_order_id: string
-  razorpay_payment_id: string
-  razorpay_signature: string
-  orderData?: any
-}
-
 export async function POST(request: Request) {
+  await connectToMongoose()
+  
   try {
-    const body: VerifyPaymentRequest = await request.json()
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = body
+    const body = await request.json()
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = body
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-      return NextResponse.json(
-        { success: false, message: 'Missing payment details' },
-        { status: 400 }
-      )
-    }
-
+    // Verify signature
     const expectedSignature = crypto
       .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest('hex')
 
-    const isAuthentic = expectedSignature === razorpay_signature
-
-    if (!isAuthentic) {
+    if (expectedSignature !== razorpay_signature) {
       return NextResponse.json(
         { success: false, message: 'Invalid signature' },
         { status: 400 }
       )
     }
 
+    // Update order status using native MongoDB driver
+    const db = mongoose.connection.db
+    const result = await db.collection('orders').updateOne(
+      { _id: new mongoose.Types.ObjectId(orderId) },
+      {
+        $set: {
+          paymentStatus: 'paid',
+          status: 'confirmed',
+          razorpayOrderId: razorpay_order_id,
+          razorpayPaymentId: razorpay_payment_id,
+          paymentVerifiedAt: new Date()
+        }
+      }
+    )
+
+    if (result.matchedCount === 0) {
+      return NextResponse.json(
+        { success: false, message: 'Order not found' },
+        { status: 404 }
+      )
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'Payment verified successfully',
-      paymentId: razorpay_payment_id,
-      orderId: razorpay_order_id
+      message: 'Payment verified and order updated',
+      orderId
     })
+
   } catch (error: any) {
     console.error('Payment verification error:', error)
     return NextResponse.json(
-      { success: false, error: error.message || 'Payment verification failed' },
+      { 
+        success: false, 
+        error: error.message || 'Payment verification failed'
+      },
       { status: 500 }
     )
   }

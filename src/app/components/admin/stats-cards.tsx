@@ -2,21 +2,60 @@
 
 import { motion } from "framer-motion"
 import { DollarSign, Package, ShoppingCart, Users } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Skeleton } from "@/components/ui/skeleton"
 
-interface StatsCardsProps {
-  stats: {
-    totalOrders: number
-    totalRevenue: number
-    activeRentals: number
-    totalCustomers: number
-  }
+interface StatsData {
+  totalOrders: number
+  totalRevenue: number
+  activeRentals: number
+  totalCustomers: number
 }
 
-export function StatsCards({ stats }: StatsCardsProps) {
+export function StatsCards() {
+  const [stats, setStats] = useState<StatsData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch("/api/admin/stats")
+        if (!response.ok) throw new Error("Failed to fetch stats")
+        const data = await response.json()
+        setStats(data)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Unknown error")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchStats()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Skeleton key={i} className="h-32 rounded-lg" />
+        ))}
+      </div>
+    )
+  }
+
+  if (error) {
+    return <div className="text-red-500 p-4">{error}</div>
+  }
+
+  if (!stats) {
+    return <div className="text-gray-500 p-4">No stats available</div>
+  }
+
   const cards = [
     {
       title: "Total Revenue",
-      value: `$${stats.totalRevenue.toFixed(2)}`,
+      value: `₹${stats.totalRevenue.toFixed(2)}`,
       icon: DollarSign,
       color: "from-purple-500 to-indigo-600",
     },

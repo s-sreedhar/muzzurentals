@@ -1,6 +1,6 @@
 import { Header } from "@/components/header"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
-import { BlockedDatesManagement } from "@/components/admin/blocked-states-management"
+import { BlockedDatesManagement } from "@/app/components/admin/blocked-dates-management"
 
 export default function AdminBlockedDatesPage() {
   return (

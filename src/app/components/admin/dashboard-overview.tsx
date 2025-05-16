@@ -48,40 +48,20 @@ export function DashboardOverview() {
 
   return (
     <div className="space-y-6">
-      <StatsCards stats={stats} />
+      <StatsCards />
 
       <Tabs defaultValue="weekly" className="w-full">
-        <TabsList className="grid grid-cols-2 w-[400px] bg-gray-800">
-          <TabsTrigger value="weekly">Weekly Income</TabsTrigger>
-          <TabsTrigger value="monthly">Monthly Income</TabsTrigger>
-        </TabsList>
-        <TabsContent value="weekly">
-          <Card className="bg-gray-800 border-gray-700 text-white">
-            <CardHeader>
-              <CardTitle>Weekly Income</CardTitle>
-              <CardDescription className="text-gray-400">
-                Comparison of current and previous week&apos; income
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <IncomeChart period="weekly" />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="monthly">
-          <Card className="bg-gray-800 border-gray-700 text-white">
-            <CardHeader>
-              <CardTitle>Monthly Income</CardTitle>
-              <CardDescription className="text-gray-400">
-                Comparison of current and previous month&apos;s income
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <IncomeChart period="monthly" />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      <TabsList className="grid grid-cols-2 w-[400px] bg-gray-800">
+        <TabsTrigger value="weekly">Weekly Income</TabsTrigger>
+        <TabsTrigger value="monthly">Monthly Income</TabsTrigger>
+      </TabsList>
+      <TabsContent value="weekly">
+        <IncomeChart period="weekly" />
+      </TabsContent>
+      <TabsContent value="monthly">
+        <IncomeChart period="monthly" />
+      </TabsContent>
+    </Tabs>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="bg-gray-800 border-gray-700 text-white">

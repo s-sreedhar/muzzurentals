@@ -11,11 +11,11 @@ export function AdminSidebar() {
   const menuItems = [
     { name: "Dashboard", href: "/admin", icon: Home },
     { name: "Orders", href: "/admin/orders", icon: ClipboardList },
-    { name: "Cameras", href: "/admin/cameras", icon: Camera },
+    // { name: "Cameras", href: "/admin/cameras", icon: Camera },
     { name: "Blocked Dates", href: "/admin/blocked-dates", icon: Calendar },
-    { name: "Users", href: "/admin/users", icon: Users },
-    { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
-    { name: "Settings", href: "/admin/settings", icon: Settings },
+    // { name: "Users", href: "/admin/users", icon: Users },
+    // { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+    // { name: "Settings", href: "/admin/settings", icon: Settings },
   ]
 
   return (
