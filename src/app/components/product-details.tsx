@@ -11,14 +11,14 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Check, ChevronLeft, ShoppingCart, Clock, AlertCircle } from "lucide-react"
+import { Check, ChevronLeft, ShoppingCart, Clock, AlertCircle, ArrowRight } from "lucide-react"
 import { motion } from "framer-motion"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { format, addDays, isBefore, isAfter, isSameDay } from "date-fns"
 import Link from "next/link"
-
+import { useRouter } from "next/navigation"
 interface ProductDetailsProps {
   camera: Camera
 }
@@ -36,6 +36,7 @@ interface ReservedDate {
 export function ProductDetails({ camera }: ProductDetailsProps) {
   const { addToCart } = useCart()
   const { toast } = useToast()
+  const router = useRouter()
 
   // Use state to prevent hydration errors
   const [isClient, setIsClient] = useState(false)
@@ -642,31 +643,44 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
               </div>
             )}
           </CardContent>
-          <CardFooter>
-            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full">
-              <Button
-                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-                onClick={handleAddToCart}
-                disabled={
-                  !camera.available ||
-                  addedToCart ||
-                  !startDate ||
-                  isDateReserved(startDate) ||
-                  (rentalType === "full-day" && endDate && isDateRangeReserved(startDate, endDate))
-                }
-              >
-                {addedToCart ? (
-                  <>
-                    <Check className="mr-2 h-4 w-4" /> Added to Cart
-                  </>
-                ) : (
-                  <>
-                    <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
-                  </>
-                )}
-              </Button>
-            </motion.div>
-          </CardFooter>
+      <CardFooter>
+  <div className="flex flex-col w-full space-y-4">
+    <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full">
+      <Button
+        className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+        onClick={handleAddToCart}
+        disabled={
+          !camera.available ||
+          addedToCart ||
+          !startDate ||
+          isDateReserved(startDate) ||
+          (rentalType === "full-day" && endDate && isDateRangeReserved(startDate, endDate))
+        }
+      >
+        {addedToCart ? (
+          <>
+            <Check className="mr-2 h-4 w-4" /> Added to Cart
+          </>
+        ) : (
+          <>
+            <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
+          </>
+        )}
+      </Button>
+    </motion.div>
+
+    <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full">
+      <Button
+        className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+        onClick={() => router.push('/cart/checkout')}
+        disabled={!addedToCart}
+      >
+        <ArrowRight className="mr-2 h-4 w-4" /> Proceed to Checkout
+      </Button>
+    </motion.div>
+  </div>
+</CardFooter>
+
         </Card>
       </motion.div>
     </div>

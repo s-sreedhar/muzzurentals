@@ -15,11 +15,12 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-// import { createOrder } from "@/app/actions/orders"
+// import { createOrder } from "@/app/actions/orders"   /python-
 import { Loader2, Phone, ShieldCheck, Truck, MessageSquare } from "lucide-react"
 import { motion } from "framer-motion"
 import { format, parseISO } from "date-fns"
 import type { Camera } from "@/lib/types"
+import Script from "next/script";
 import Link from "next/link"
 // Define proper types for cart items with details
 interface CartItemWithDetails {
@@ -109,133 +110,177 @@ export default function CheckoutPage() {
     }
   }, [status, router, toast, isClient])
 
-  // Process checkout with RazorPay
-  const handleCheckout = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsProcessing(true)
-    setError("")
+  // Process checkout with PhonePe
+// const handleCheckout = async (e: React.FormEvent<HTMLFormElement>) => {
+//   e.preventDefault();
+//   setIsProcessing(true);
+//   setError("");
 
-    if (!phoneNumber || phoneNumber.length < 10) {
-      setError("Please enter a valid phone number")
-      toast({
-        title: "Invalid phone number",
-        description: "Please enter a valid phone number to continue.",
-        variant: "destructive",
-      })
-      setIsProcessing(false)
-      return
-    }
+//   if (!phoneNumber || phoneNumber.length < 10) {
+//     const message = "Please enter a valid phone number";
+//     setError(message);
+//     toast({
+//       title: "Invalid phone number",
+//       description: message,
+//       variant: "destructive",
+//     });
+//     setIsProcessing(false);
+//     return;
+//   }
 
-    try {
-      // Step 1: Create order on your server
-      const orderResponse = await fetch('/api/razorpay/create-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          amount: Math.round(total * 100), // Razorpay expects amount in paise
-          currency: 'INR',
-        }),
-      })
+//   const transactionId = `TID${Date.now()}`;
+//   const redirectUrl = `${window.location.origin}/payment-success`;
 
-      if (!orderResponse.ok) {
-        throw new Error('Failed to create Razorpay order')
-      }
+//   try {
+//     const res = await fetch("/api/phonepe/create-order", {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify({
+//         amount: Math.round(total * 100), // ₹ to paise
+//         phoneNumber,
+//         transactionId,
+//         redirectUrl,
+//       }),
+//     });
 
-      const orderData = await orderResponse.json()
+//     if (!res.ok) {
+//       const errorMsg = "Failed to create PhonePe order";
+//       throw new Error(errorMsg);
+//     }
 
-      // Step 2: Initialize Razorpay payment
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: orderData.amount,
-        currency: orderData.currency,
-        order_id: orderData.id,
-        name: 'Muzzu Rentals',
-        description: 'Camera Rental Payment',
-        image: '/logo.png',
-        prefill: {
-          name: session?.user?.name || '',
-          email: session?.user?.email || '',
-          contact: phoneNumber,
-        },
-        theme: {
-          color: '#685cfd',
-        },
-        handler: async (response: any) => {
-          try {
-            // Verify payment on your server
-            const verificationResponse = await fetch('/api/razorpay/verify-payment', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature,
-                orderData: {
-                  userId: session?.user?.id,
-                  items: cartItems,
-                  total,
-                  phoneNumber,
-                },
-              }),
-            })
+//     const data = await res.json();
+//     const paymentUrl = data.data?.instrumentResponse?.redirectInfo?.url;
 
-            const verificationData = await verificationResponse.json()
+//     if (!paymentUrl) {
+//       throw new Error("PhonePe payment URL not found in response");
+//     }
 
-            if (verificationData.success) {
-              setIsSuccess(true)
-              clearCart()
-              setWhatsappSent(verificationData.whatsappSent || false)
-              toast({
-                title: "Payment Successful!",
-                description: "Your rental has been successfully processed.",
-                variant: "default",
-              })
-              setTimeout(() => {
-                router.push("/profile")
-              }, 3000)
-            } else {
-              throw new Error(verificationData.message || 'Payment verification failed')
-            }
-          } catch (error) {
-            console.error('Payment verification error:', error)
-            setError('Payment verification failed')
-            toast({
-              title: 'Payment Error',
-              description: 'There was an issue verifying your payment.',
-              variant: 'destructive',
-            })
-          } finally {
-            setIsProcessing(false)
-          }
-        },
-        modal: {
-          ondismiss: () => {
-            setIsProcessing(false)
-            toast({
-              title: 'Payment Cancelled',
-              description: 'You cancelled the payment.',
-            })
-          },
-        },
-      }
+//     // Store transaction ID to verify later
+//     localStorage.setItem("phonepe_txn_id", transactionId);
 
-      const rzp = new window.Razorpay(options)
-      rzp.open()
-    } catch (error) {
-      console.error('Checkout error:', error)
-      setError('Failed to process payment')
-      toast({
-        title: 'Payment Error',
-        description: 'There was an issue processing your payment.',
-        variant: 'destructive',
-      })
-      setIsProcessing(false)
-    }
+//     // Redirect user to PhonePe payment page
+//     window.location.href = paymentUrl;
+//   } catch (error: any) {
+//     console.error("PhonePe checkout error:", error);
+//     toast({
+//       title: "Payment Error",
+//       description: error.message || "Something went wrong with PhonePe checkout.",
+//       variant: "destructive",
+//     });
+//     setError(error.message || "Failed to process payment");
+//     setIsProcessing(false);
+//   }
+// };
+
+//Process checkout with Razorpay
+const handleCheckout = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setIsProcessing(true);
+  setError("");
+
+  // Validate phone number
+  const phoneRegex = /^[6-9]\d{9}$/; // Indian phone number validation
+  if (!phoneNumber || !phoneRegex.test(phoneNumber)) {
+    const message = "Please enter a valid 10-digit Indian phone number";
+    setError(message);
+    toast({
+      title: "Invalid phone number",
+      description: message,
+      variant: "destructive",
+    });
+    setIsProcessing(false);
+    return;
   }
+
+  try {
+    const res = await fetch("/api/razorpay/create-order", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        amount: Math.round(total * 100), // ₹ to paise
+        currency: "INR",
+        phoneNumber,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to create Razorpay order");
+    }
+
+    const options = {
+      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
+      amount: data.amount,
+      currency: data.currency || "INR",
+      name: "Your App Name",
+      description: "Payment",
+      order_id: data.id,
+      handler: async function (response: any) {
+        try {
+          // Verify payment on your server
+          const verificationRes = await fetch("/api/razorpay/verify-payment", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            }),
+          });
+
+          const verificationData = await verificationRes.json();
+
+          if (!verificationRes.ok || !verificationData.success) {
+            throw new Error(verificationData.message || "Payment verification failed");
+          }
+
+          window.location.href = `/payment-success?payment_id=${response.razorpay_payment_id}`;
+        } catch (error) {
+          console.error("Payment verification error:", error);
+          toast({
+            title: "Verification Error",
+            description: error.message || "Payment verification failed",
+            variant: "destructive",
+          });
+        }
+      },
+      prefill: {
+        contact: phoneNumber,
+      },
+      theme: {
+        color: "#3399cc",
+      },
+    };
+
+    const razorpay = new (window as any).Razorpay(options);
+    razorpay.on("payment.failed", function (response: any) {
+      toast({
+        title: "Payment Failed",
+        description: response.error.description || "Payment failed",
+        variant: "destructive",
+      });
+    });
+    razorpay.open();
+  } catch (error: any) {
+    console.error("Checkout error:", error);
+    toast({
+      title: "Error",
+      description: error.message || "Something went wrong",
+      variant: "destructive",
+    });
+    setError(error.message || "Failed to process payment");
+  } finally {
+    setIsProcessing(false);
+  }
+};
+
 
   const getTimeSlotLabel = (slot?: string): string => {
     if (!slot) return ""
@@ -385,6 +430,11 @@ export default function CheckoutPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
+      <script
+          id="razorpay-script"
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          async
+        />
       <Header />
       <div className="container mx-auto px-4 py-12">
         <motion.h1

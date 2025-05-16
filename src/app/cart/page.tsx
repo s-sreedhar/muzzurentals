@@ -222,12 +222,11 @@ export default function CartPage() {
                   <span className="text-purple-400">₹{total.toFixed(2)}</span>
                 </div>
               </div>
-
               <Button
-                className="w-full mt-6 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-                onClick={handleCheckout}
+              className="w-full mt-6 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+              onClick={handleCheckout}
               >
-                Proceed to Checkout
+              Proceed to Checkout
               </Button>
             </div>
           </div>

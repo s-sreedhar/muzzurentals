@@ -31,7 +31,9 @@
       "@/actions/*":["./src/app/actions/*"],
       "@/models/*":["./src/app/models/*"],
       "@/components/admin/*":["./src/app/components/admin/*"],
-      "@/stores/*":["./src/app/stores/*"]
+      "@/stores/*":["./src/app/stores/*"],
+      "@/types/*":["./src/app/types/*"],
+      "@/utils/*":["./src/app/utils/*"]
     }
   },
   // "typescript": {
