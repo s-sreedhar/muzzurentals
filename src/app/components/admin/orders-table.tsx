@@ -107,31 +107,31 @@ export function OrdersTable() {
     }
   }
 
-  const handleViewOrder = (orderId: string) => {
-    router.push(`/admin/orders/${orderId}`)
-  }
+  // const handleViewOrder = (orderId: string) => {
+  //   router.push(`/admin/orders/${orderId}`)
+  // }
 
-  const handleExportCSV = async () => {
-    try {
-      const response = await fetch(
-        `/api/admin/export-orders?status=${statusFilter}&search=${encodeURIComponent(debouncedSearchTerm)}`
-      )
-      if (!response.ok) throw new Error("Export failed")
+  // const handleExportCSV = async () => {
+  //   try {
+  //     const response = await fetch(
+  //       `/api/admin/export-orders?status=${statusFilter}&search=${encodeURIComponent(debouncedSearchTerm)}`
+  //     )
+  //     if (!response.ok) throw new Error("Export failed")
       
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `orders_${format(new Date(), 'yyyyMMdd')}.csv`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      window.URL.revokeObjectURL(url)
-    } catch (error) {
-      console.error("Export error:", error)
-      // Add toast notification here if needed
-    }
-  }
+  //     const blob = await response.blob()
+  //     const url = window.URL.createObjectURL(blob)
+  //     const a = document.createElement("a")
+  //     a.href = url
+  //     a.download = `orders_${format(new Date(), 'yyyyMMdd')}.csv`
+  //     document.body.appendChild(a)
+  //     a.click()
+  //     document.body.removeChild(a)
+  //     window.URL.revokeObjectURL(url)
+  //   } catch (error) {
+  //     console.error("Export error:", error)
+  //     // Add toast notification here if needed
+  //   }
+  // }
 
   return (
     <div className="space-y-4">
@@ -168,7 +168,7 @@ export function OrdersTable() {
             </Select>
           </div>
 
-          <Button 
+          {/* <Button 
             variant="outline" 
             onClick={handleExportCSV}
             className="gap-2"
@@ -176,7 +176,7 @@ export function OrdersTable() {
           >
             <Download className="h-4 w-4" />
             Export
-          </Button>
+          </Button> */}
         </div>
       </div>
 
@@ -199,7 +199,7 @@ export function OrdersTable() {
                     <th scope="col" className="px-6 py-3">Status</th>
                     <th scope="col" className="px-6 py-3">Payment</th>
                     <th scope="col" className="px-6 py-3">Created</th>
-                    <th scope="col" className="px-6 py-3">Actions</th>
+                    {/* <th scope="col" className="px-6 py-3">Actions</th> */}
                   </tr>
                 </thead>
                 <tbody>
@@ -250,7 +250,7 @@ export function OrdersTable() {
                         <td className="px-6 py-4">
                           {format(new Date(order.createdAt), "MMM dd, yyyy")}
                         </td>
-                        <td className="px-6 py-4">
+                        {/* <td className="px-6 py-4">
                           <Button
                             size="icon"
                             variant="ghost"
@@ -259,7 +259,7 @@ export function OrdersTable() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                        </td>
+                        </td> */}
                       </tr>
                     ))
                   ) : (

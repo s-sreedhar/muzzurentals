@@ -75,9 +75,9 @@ export default function ProfilePage() {
           <h1 className="text-3xl font-bold mb-8">My Account</h1>
 
           <Tabs defaultValue="profile">
-            <TabsList className="mb-8">
+            <TabsList className="mb-8 text-2xl">
               <TabsTrigger value="profile">Profile</TabsTrigger>
-              <TabsTrigger value="rentals">Rental History</TabsTrigger>
+              {/* <TabsTrigger value="rentals">Rental History</TabsTrigger> */}
               <TabsTrigger value="cart">Current Cart</TabsTrigger>
             </TabsList>
 
@@ -87,7 +87,7 @@ export default function ProfilePage() {
                   <CardTitle>Profile Information</CardTitle>
                   <CardDescription>Manage your account details</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-6 ">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <h3 className="text-sm font-medium text-gray-500">Name</h3>
@@ -102,7 +102,7 @@ export default function ProfilePage() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="rentals">
+            {/* <TabsContent value="rentals">
               <Card>
                 <CardHeader>
                   <CardTitle>Rental History</CardTitle>
@@ -149,7 +149,7 @@ export default function ProfilePage() {
                   )}
                 </CardContent>
               </Card>
-            </TabsContent>
+            </TabsContent> */}
 
             <TabsContent value="cart">
               <Card>

@@ -50,7 +50,7 @@ const cameras = [
 export function IncomeChart({ period }: IncomeChartProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [chartData, setChartData] = useState<ChartData | null>(null)
-  const [selectedCamera, setSelectedCamera] = useState<string>("all")
+  const [selectedCamera, setSelectedCamera] = useState<string>("canon-eos-77d")
   // const [cameras, setCameras] = useState<Camera[]>([{ id: "all", name: "All Cameras" }])
   const [error, setError] = useState<string | null>(null)
 

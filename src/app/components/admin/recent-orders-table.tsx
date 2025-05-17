@@ -143,7 +143,7 @@ export function RecentOrdersTable() {
                     </div>
                   )}
                 </td>
-                <td className="px-4 py-3">${order.total.toFixed(2)}</td>
+                <td className="px-4 py-3">₹{order.total.toFixed(2)}</td>
                 <td className="px-4 py-3">
                   <Badge className={getStatusColor(order.status)}>
                     {order.status.charAt(0).toUpperCase() + order.status.slice(1)}

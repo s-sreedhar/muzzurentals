@@ -13,7 +13,7 @@ export default function PaymentSuccess() {
   useEffect(() => {
     const timer = setTimeout(() => {
       router.push("/");
-    }, 5000);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [router]);
@@ -86,7 +86,7 @@ export default function PaymentSuccess() {
             asChild
             className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
           >
-            <Link href="/orders" className="flex items-center gap-2">
+            <Link href="/profile" className="flex items-center gap-2">
               <ShoppingBag className="h-5 w-5" />
               View Your Orders
             </Link>
@@ -121,7 +121,7 @@ export default function PaymentSuccess() {
         />
         
         <p className="text-gray-500 mt-4">
-          You'll be automatically redirected in 5 seconds...
+          You'll be automatically redirected in 3 seconds...
         </p>
       </motion.main>
     </div>

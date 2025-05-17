@@ -15,7 +15,6 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-// import { createOrder } from "@/app/actions/orders"   /python-
 import { Loader2, Phone, ShieldCheck, Truck, MessageSquare } from "lucide-react"
 import { motion } from "framer-motion"
 import { format, parseISO } from "date-fns"
@@ -264,10 +263,17 @@ const handleCheckout = async (e: React.FormEvent<HTMLFormElement>) => {
             })
           });
 
-          const verificationData = await verificationRes.json();
-          
+          const verificationData = await verificationRes.json()
           if (!verificationRes.ok || !verificationData.success) {
             throw new Error(verificationData.message || "Payment verification failed");
+          }
+
+          try {
+            console.log("Is it coming here in line 272");
+            clearCart();
+          } catch (error) {
+            console.error("Failed to clear cart:", error);
+            // Don't block redirection if cart clearing fails
           }
 
           window.location.href = `/payment-success?orderId=${orderId}`;
