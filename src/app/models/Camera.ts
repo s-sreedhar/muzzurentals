@@ -6,9 +6,15 @@ export interface ICamera extends Document {
   brand: string
   category: string
   description: string
-  pricePerDay: number
+  pricing: {
+    perDay: number
+    halfDay: number
+    fullDay9hrs: number
+    fullDay24hrs: number
+  }
   image: string
   available: boolean
+  isNew: boolean
   specs: string[]
   included: string[]
   createdAt: Date
@@ -43,10 +49,27 @@ const CameraSchema: Schema<ICamera> = new Schema(
       required: true,
       trim: true 
     },
-    pricePerDay: { 
-      type: Number, 
-      required: true,
-      min: 0 
+    pricing: {
+      perDay: { 
+        type: Number, 
+        required: true,
+        min: 0 
+      },
+      halfDay: { 
+        type: Number, 
+        required: true,
+        min: 0 
+      },
+      fullDay9hrs: { 
+        type: Number, 
+        required: true,
+        min: 0 
+      },
+      fullDay24hrs: { 
+        type: Number, 
+        required: true,
+        min: 0 
+      }
     },
     image: { 
       type: String, 
@@ -57,6 +80,11 @@ const CameraSchema: Schema<ICamera> = new Schema(
       type: Boolean, 
       required: true, 
       default: true 
+    },
+    isNew: {
+      type: Boolean,
+      required: true,
+      default: false
     },
     specs: { 
       type: [String], 
@@ -84,6 +112,8 @@ const CameraSchema: Schema<ICamera> = new Schema(
       transform: function(doc, ret) {
         delete ret._id
         delete ret.__v
+        // Flatten pricing for backward compatibility
+        ret.pricePerDay = ret.pricing.perDay
         return ret
       }
     },
@@ -96,14 +126,42 @@ const CameraSchema: Schema<ICamera> = new Schema(
 // Add index for frequently queried fields
 CameraSchema.index({ name: 'text', brand: 'text', category: 'text' })
 
+// Virtual for days since added (for new badge logic)
+CameraSchema.virtual('daysSinceAdded').get(function() {
+  return Math.floor((Date.now() - this.createdAt.getTime()) / (1000 * 60 * 60 * 24))
+})
+
 // Pre-save hook to ensure consistency
 CameraSchema.pre('save', function(next) {
+  // Ensure pricing consistency
+  if (this.isModified('pricing')) {
+    const { halfDay, fullDay9hrs, fullDay24hrs, perDay } = this.pricing
+    
+    // Validate that shorter durations don't cost more than longer ones
+    if (halfDay > fullDay9hrs || fullDay9hrs > fullDay24hrs || fullDay24hrs > perDay) {
+      throw new Error("Pricing structure must follow: halfDay ≤ fullDay9hrs ≤ fullDay24hrs ≤ perDay")
+    }
+  }
+
+  // Clean up arrays
   if (this.isModified('specs') || this.isModified('included')) {
     this.specs = this.specs.filter(item => item.trim().length > 0)
     this.included = this.included.filter(item => item.trim().length > 0)
   }
+
+  // Automatically mark as new if created within last 7 days
+  if (this.isNew) {
+    this.isNew = this.daysSinceAdded < 7
+  }
+
   next()
 })
+
+// Static method for finding new cameras
+CameraSchema.statics.findNew = function() {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  return this.find({ createdAt: { $gte: sevenDaysAgo } })
+}
 
 const Camera: Model<ICamera> = mongoose.models.Camera || mongoose.model<ICamera>("Camera", CameraSchema)
 

@@ -135,8 +135,8 @@ export default function ContactPage() {
                       <MapPin className="h-5 w-5 mr-3 mt-0.5 text-blue-600" />
                       <div>
                         <h3 className="font-medium text-gray-900">Our Address</h3>
-                        <p className="text-gray-600">15/59, 2nd street</p>
-                        <p className="text-gray-600">Ranipeta, Gudur, Tirupati Dist</p>
+                        <p className="text-gray-600">Market Road,Opposite to SMG High school</p>
+                        <p className="text-gray-600"> Nehru Nagar, Gudur</p>
                         <p className="text-gray-600">Andhra Pradesh, India - 524101</p>
                       </div>
                     </div>

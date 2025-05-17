@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth-options"
 import { connectToMongoose } from "@/lib/mongodb"
 import Order from "@/models/Order"
 import User from "@/models/User"
-const ADMIN_EMAILS = ["s.sreedhargoud@gmail.com", "admin2@example.com"]
+const ADMIN_EMAILS = ["s.sreedhargoud@gmail.com", "muzameelpatan123@gmail.com", "admin2@example.com"]
 export async function GET() {
   const session = await getServerSession(authOptions)
 

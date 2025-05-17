@@ -6,7 +6,7 @@ import { connectToMongoose } from "@/lib/mongodb"
 import BlockedDate from "@/models/BlockedDate"
 import Camera from "@/models/Camera"
 
-const ADMIN_EMAILS = ["s.sreedhargoud@gmail.com"]
+const ADMIN_EMAILS = ["s.sreedhargoud@gmail.com", "muzameelpatan123@gmail.com"]
 
 // Helper to validate camera exists
 async function validateCamera(cameraId: string) {

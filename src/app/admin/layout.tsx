@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth-options"
 
 // List of admin emails
-const ADMIN_EMAILS = ["s.sreedhargoud@gmail.com", ""] // Replace with actual admin emails
+const ADMIN_EMAILS = ["s.sreedhargoud@gmail.com", "muzameelpatan123@gmail.com", ""] // Replace with actual admin emails
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions)

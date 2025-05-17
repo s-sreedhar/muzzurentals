@@ -16,7 +16,7 @@ import {
   eachWeekOfInterval
 } from "date-fns"
 
-const ADMIN_EMAILS = ["s.sreedhargoud@gmail.com"]
+const ADMIN_EMAILS = ["s.sreedhargoud@gmail.com", "muzameelpatan123@gmail.com"]
 
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions)

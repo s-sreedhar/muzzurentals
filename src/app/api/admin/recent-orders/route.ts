@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth-options"
 import { connectToMongoose } from "@/lib/mongodb"
 import Order from "@/models/Order"
 
-const ADMIN_EMAILS = ["s.sreedhargoud@gmail.com"]
+const ADMIN_EMAILS = ["s.sreedhargoud@gmail.com", "muzameelpatan123@gmail.com"]
 
 interface RecentOrder {
   id: string

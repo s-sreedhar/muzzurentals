@@ -45,8 +45,8 @@ export function Footer() {
               <div className="flex items-start">
                 <MapPin className="h-5 w-5 mr-2 mt-0.5 text-gray-400" />
                 <div>
-                  <p className="text-gray-300">15/59, 2nd street</p>
-                  <p className="text-gray-300">Ranipeta, Gudur, Tirupati Dist</p>
+                  <p className="text-gray-300">Market Road, Opposite to SMG High School</p>
+                  <p className="text-gray-300">Nehru Nagar, Gudur, Tirupati Dist</p>
                   <p className="text-gray-300">Andhra Pradesh, India - 524101</p>
                 </div>
               </div>

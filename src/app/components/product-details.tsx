@@ -19,11 +19,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { format, addDays, isBefore, isAfter, isSameDay } from "date-fns"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { Checkbox } from "@/components/ui/checkbox"
+
 interface ProductDetailsProps {
   camera: Camera
 }
 
-// Define proper types for reserved dates
 interface ReservedDate {
   _id: string
   cameraId: string
@@ -31,24 +32,28 @@ interface ReservedDate {
   endDate: string
   isFullDay: boolean
   timeSlot?: "morning" | "afternoon" | "evening"
+  fullDayType?: "9hrs" | "24hrs"
 }
 
 export function ProductDetails({ camera }: ProductDetailsProps) {
-  const { addToCart } = useCart()
+  const { cart, addToCart } = useCart()
   const { toast } = useToast()
   const router = useRouter()
 
-  // Use state to prevent hydration errors
   const [isClient, setIsClient] = useState(false)
   const [startDate, setStartDate] = useState<Date | undefined>(undefined)
   const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   const [rentalType, setRentalType] = useState<"half-day" | "full-day">("full-day")
   const [timeSlot, setTimeSlot] = useState<"morning" | "afternoon" | "evening">("morning")
+  const [fullDayType, setFullDayType] = useState<"9hrs" | "24hrs">("9hrs")
   const [addedToCart, setAddedToCart] = useState(false)
   const [reservedDates, setReservedDates] = useState<ReservedDate[]>([])
-  // const [isLoading, setIsLoading] = useState(true)
+  const [accessories, setAccessories] = useState({
+    tripod:false,
+    longLens: false,
+    extraBattery: false
+  })
 
-  // Initialize dates after hydration to prevent mismatch
   useEffect(() => {
     setIsClient(true)
     const today = new Date()
@@ -57,22 +62,17 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
   }, [])
 
   useEffect(() => {
-    // Only fetch reserved dates after component has mounted
     if (!isClient) return
 
-    // Fetch reserved dates for this camera
     const fetchReservedDates = async () => {
       try {
         const response = await fetch(`/api/reserved-dates?cameraId=${camera.id}`)
         const data = await response.json()
-
         if (data.success) {
           setReservedDates(data.reservedDates)
         }
       } catch (error) {
         console.error("Error fetching reserved dates:", error)
-      } finally {
-        // setIsLoading(false)
       }
     }
 
@@ -89,11 +89,7 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
       return
     }
 
-    // Check if selected dates are available
-    if (
-      isDateReserved(startDate) ||
-      (rentalType === "full-day" && endDate && isDateRangeReserved(startDate, endDate))
-    ) {
+    if (isDateReserved(startDate) || (rentalType === "full-day" && endDate && isDateRangeReserved(startDate, endDate))) {
       toast({
         title: "Date unavailable",
         description: "The selected date or date range is not available for rental.",
@@ -102,14 +98,27 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
       return
     }
 
-    // Create cart item with rental details
     const cartItem = {
       id: camera.id,
+      name: camera.name,
+      image: camera.image,
+      price:
+        rentalType === "half-day"
+          ? camera.pricing.halfDay
+          : fullDayType === "9hrs"
+          ? camera.pricing.fullDay9hrs
+          : camera.pricing.fullDay24hrs,
       quantity: 1,
       rentalType,
       timeSlot: rentalType === "half-day" ? timeSlot : undefined,
+      fullDayType: rentalType === "full-day" ? fullDayType : undefined,
       startDate: startDate.toISOString(),
       endDate: endDate?.toISOString() || startDate.toISOString(),
+      accessories: (accessories.tripod || accessories.longLens || accessories.extraBattery ) ? {
+        tripod:accessories.tripod,
+        longLens: accessories.longLens,
+        extraBattery: accessories.extraBattery
+      } : undefined
     }
 
     addToCart(cartItem)
@@ -126,48 +135,33 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
     }, 2000)
   }
 
-  // Check if a date is reserved
   const isDateReserved = (date: Date): boolean => {
-    // Check if date is in the past
     if (isBefore(date, new Date()) && !isSameDay(date, new Date())) {
       return true
     }
 
-    // For full-day rentals, check if the date is fully reserved
-    if (rentalType === "full-day") {
-      return reservedDates.some((reservedDate) => {
-        const start = new Date(reservedDate.startDate)
-        const end = new Date(reservedDate.endDate)
-        return (
-          (isSameDay(date, start) || isAfter(date, start)) &&
-          (isSameDay(date, end) || isBefore(date, end)) &&
-          reservedDate.isFullDay
-        )
-      })
-    }
-
-    // For half-day rentals, check if the specific time slot is reserved
     return reservedDates.some((reservedDate) => {
       const start = new Date(reservedDate.startDate)
       const end = new Date(reservedDate.endDate)
-
-      if ((isSameDay(date, start) || isAfter(date, start)) && (isSameDay(date, end) || isBefore(date, end))) {
-        // If it's a full-day reservation, the date is reserved
-        if (reservedDate.isFullDay) {
-          return true
-        }
-
-        // If it's a half-day reservation, check if the time slot matches
-        return reservedDate.timeSlot === timeSlot
+      
+      if (!((isSameDay(date, start) || isAfter(date, start)) && 
+          (isSameDay(date, end) || isBefore(date, end)))) {
+        return false
       }
 
-      return false
+      if (reservedDate.isFullDay) {
+        return true
+      }
+
+      if (rentalType === "half-day") {
+        return reservedDate.timeSlot === timeSlot
+      } else {
+        return reservedDate.fullDayType === fullDayType
+      }
     })
   }
 
-  // Check if a date range has any reserved dates
   const isDateRangeReserved = (start: Date, end: Date): boolean => {
-    // Create an array of dates between start and end
     const dates = []
     const currentDate = new Date(start)
 
@@ -176,11 +170,9 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
       currentDate.setDate(currentDate.getDate() + 1)
     }
 
-    // Check if any date in the range is reserved
     return dates.some((date) => isDateReserved(date))
   }
 
-  // Get tooltip content for a reserved date
   const getReservedDateTooltip = (date: Date): string => {
     const matchingReservations = reservedDates.filter((reservedDate) => {
       const start = new Date(reservedDate.startDate)
@@ -188,44 +180,56 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
       return (isSameDay(date, start) || isAfter(date, start)) && (isSameDay(date, end) || isBefore(date, end))
     })
 
-    if (matchingReservations.length === 0) {
-      return "Not available"
-    }
+    if (matchingReservations.length === 0) return "Available"
 
     if (matchingReservations.some((reservation) => reservation.isFullDay)) {
       return "Fully reserved"
     }
 
-    const reservedSlots = matchingReservations.map((reservation) => reservation.timeSlot).filter(Boolean) as string[]
-    if (reservedSlots.length === 3) {
-      return "Fully reserved"
-    }
-
-    return `Reserved for: ${reservedSlots.join(", ")}`
-  }
-
-  // Calculate total price
-  const calculateTotalPrice = (): number => {
-    if (!startDate) return camera.pricePerDay
-
     if (rentalType === "half-day") {
-      return camera.pricePerDay * 0.6 // 60% of full day price for half-day
+      const reservedSlots = matchingReservations
+        .map((reservation) => reservation.timeSlot)
+        .filter(Boolean) as string[]
+      if (reservedSlots.includes(timeSlot)) {
+        return `Reserved for ${timeSlot}`
+      }
+    } else {
+      const reservedTypes = matchingReservations
+        .map((reservation) => reservation.fullDayType)
+        .filter(Boolean) as string[]
+      if (reservedTypes.includes(fullDayType)) {
+        return `Reserved for ${fullDayType}`
+      }
     }
 
-    if (!endDate || isSameDay(startDate, endDate)) {
-      return camera.pricePerDay
-    }
-
-    // Calculate days between start and end date
-    const start = new Date(startDate)
-    const end = new Date(endDate)
-    const diffTime = Math.abs(end.getTime() - start.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
-    return camera.pricePerDay * diffDays
+    return "Partially reserved"
   }
 
-  // Show loading state during hydration
+  const calculateTotalPrice = (): number => {
+    let total = 0
+
+    // Camera rental price
+    if (!startDate) {
+      total = fullDayType === "9hrs" ? camera.pricing.fullDay9hrs : camera.pricing.fullDay24hrs
+    } else if (rentalType === "half-day") {
+      total = camera.pricing.halfDay
+    } else if (!endDate || isSameDay(startDate, endDate)) {
+      total = fullDayType === "9hrs" ? camera.pricing.fullDay9hrs : camera.pricing.fullDay24hrs
+    } else {
+      const diffTime = Math.abs(endDate.getTime() - startDate.getTime())
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      const dailyPrice = fullDayType === "9hrs" ? camera.pricing.fullDay9hrs : camera.pricing.fullDay24hrs
+      total = dailyPrice * diffDays
+    }
+
+    // Add accessories if selected
+    if (accessories.tripod) total+= 100
+    if (accessories.longLens) total += 100
+    if (accessories.extraBattery) total += 50
+
+    return total
+  }
+
   if (!isClient) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -251,6 +255,7 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Left side - Image gallery */}
       <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
         <Link href="/" className="inline-flex items-center text-gray-300 mb-4 hover:text-white">
           <ChevronLeft className="h-4 w-4 mr-1" />
@@ -291,6 +296,7 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
         </div>
       </motion.div>
 
+      {/* Right side - Product details */}
       <motion.div
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -309,21 +315,14 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
           {camera.name}
         </h1>
 
-        {/* <div className="flex items-center mt-2 mb-4">
-          <div className="flex">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`h-5 w-5 ${i < camera.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-600"}`}
-              />
-            ))}
-          </div>
-          <span className="ml-2 text-gray-400">{camera.reviews} reviews</span>
-        </div> */}
-
         <div className="flex items-baseline mb-6">
-          <span className="text-3xl font-bold text-white">₹{camera.pricePerDay}</span>
+          <span className="text-3xl font-bold text-white">
+            ₹{fullDayType === "9hrs" ? camera.pricing.fullDay9hrs : camera.pricing.fullDay24hrs}
+          </span>
           <span className="text-gray-400 ml-1">/day</span>
+          {rentalType === "half-day" && (
+            <span className="ml-4 text-gray-400">(Half day: ₹{camera.pricing.halfDay})</span>
+          )}
         </div>
 
         <Separator className="my-6 bg-gray-700" />
@@ -412,9 +411,35 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
                 </RadioGroup>
               </div>
 
+              {rentalType === "full-day" && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-400 mb-2">Full Day Type</h3>
+                  <RadioGroup
+                    value={fullDayType}
+                    onValueChange={(value) => setFullDayType(value as "9hrs" | "24hrs")}
+                    className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                  >
+                    <div className="flex items-center space-x-2 bg-gray-700/50 p-3 rounded-md border border-gray-700">
+                      <RadioGroupItem value="9hrs" id="9hrs" className="border-purple-500 text-purple-500" />
+                      <Label htmlFor="9hrs" className="flex items-center text-white">
+                        <Clock className="h-4 w-4 mr-2 text-blue-400" />
+                        9 Hours (₹{camera.pricing.fullDay9hrs})
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 bg-gray-700/50 p-3 rounded-md border border-gray-700">
+                      <RadioGroupItem value="24hrs" id="24hrs" className="border-purple-500 text-purple-500" />
+                      <Label htmlFor="24hrs" className="flex items-center text-white">
+                        <Clock className="h-4 w-4 mr-2 text-green-400" />
+                        24 Hours (₹{camera.pricing.fullDay24hrs})
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              )}
+
               {rentalType === "half-day" && (
                 <div>
-                  <h3 className="text-sm font-medium text-gray-400 mb-2">Time Slot</h3>
+                  <h3 className="text-sm font-medium text-gray-400 mb-2">Time Slot (₹{camera.pricing.halfDay})</h3>
                   <RadioGroup
                     value={timeSlot}
                     onValueChange={(value) => setTimeSlot(value as "morning" | "afternoon" | "evening")}
@@ -424,21 +449,21 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
                       <RadioGroupItem value="morning" id="morning" className="border-purple-500 text-purple-500" />
                       <Label htmlFor="morning" className="flex items-center text-white">
                         <Clock className="h-4 w-4 mr-2 text-yellow-400" />
-                        Morning (8:00 AM - 12:00 PM)
+                        Morning (8AM-12PM)
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2 bg-gray-700/50 p-3 rounded-md border border-gray-700">
                       <RadioGroupItem value="afternoon" id="afternoon" className="border-purple-500 text-purple-500" />
                       <Label htmlFor="afternoon" className="flex items-center text-white">
-                        <Clock className="h-4 w-4 mr-2 text-blue-400" />
-                        Afternoon (12:00 PM - 4:00 PM)
+                        <Clock className="h-4 w-4 mr-2 text-orange-400" />
+                        Afternoon (12PM-4PM)
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2 bg-gray-700/50 p-3 rounded-md border border-gray-700">
                       <RadioGroupItem value="evening" id="evening" className="border-purple-500 text-purple-500" />
                       <Label htmlFor="evening" className="flex items-center text-white">
-                        <Clock className="h-4 w-4 mr-2 text-orange-400" />
-                        Evening (4:00 PM - 8:00 PM)
+                        <Clock className="h-4 w-4 mr-2 text-red-400" />
+                        Evening (4PM-8PM)
                       </Label>
                     </div>
                   </RadioGroup>
@@ -521,7 +546,6 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
                           onSelect={(date) => {
                             if (!date) return
                             setStartDate(date)
-                            // If end date is before new start date, update it
                             if (endDate && isBefore(endDate, date)) {
                               setEndDate(date)
                             }
@@ -616,20 +640,93 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
               )}
             </div>
 
+            {/* Optional Accessories Section */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-gray-400">Optional Accessories</h3>
+              <div className="space-y-3">
+                    <div className="flex items-center space-x-3 bg-gray-700/50 p-3 rounded-md border border-gray-700">
+                  <Checkbox
+                    id="longLens"
+                    checked={accessories.tripod}
+                    onCheckedChange={(checked) => 
+                      setAccessories({...accessories, tripod: Boolean(checked)})
+                    }
+                    className="border-purple-500 data-[state=checked]:bg-purple-500"
+                  />
+                  <Label htmlFor="longLens" className="flex items-center justify-between w-full">
+                    <span>Tripod</span>
+                    <span className="text-gray-300">+₹100</span>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 bg-gray-700/50 p-3 rounded-md border border-gray-700">
+                  <Checkbox
+                    id="longLens"
+                    checked={accessories.longLens}
+                    onCheckedChange={(checked) => 
+                      setAccessories({...accessories, longLens: Boolean(checked)})
+                    }
+                    className="border-purple-500 data-[state=checked]:bg-purple-500"
+                  />
+                  <Label htmlFor="longLens" className="flex items-center justify-between w-full">
+                    <span>Long Lens</span>
+                    <span className="text-gray-300">+₹100</span>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 bg-gray-700/50 p-3 rounded-md border border-gray-700">
+                  <Checkbox
+                    id="extraBattery"
+                    checked={accessories.extraBattery}
+                    onCheckedChange={(checked) => 
+                      setAccessories({...accessories, extraBattery: Boolean(checked)})
+                    }
+                    className="border-purple-500 data-[state=checked]:bg-purple-500"
+                  />
+                  <Label htmlFor="extraBattery" className="flex items-center justify-between w-full">
+                    <span>Extra Battery</span>
+                    <span className="text-gray-300">+₹50</span>
+                  </Label>
+                </div>
+              </div>
+            </div>
+
+            {/* Price Summary */}
             <div className="bg-gray-700/50 p-4 rounded-lg border border-gray-700">
               <div className="flex justify-between mb-2">
                 <span className="text-gray-300">Rental Type:</span>
-                <span className="font-medium">{rentalType === "full-day" ? "Full Day" : `Half Day (${timeSlot})`}</span>
-              </div>
-              <div className="flex justify-between mb-2">
-                <span className="text-gray-300">Date:</span>
                 <span className="font-medium">
-                  {startDate ? format(startDate, "MMM dd, yyyy") : "Not selected"}
-                  {rentalType === "full-day" && endDate && !isSameDay(startDate!, endDate) && (
-                    <> - {format(endDate, "MMM dd, yyyy")}</>
-                  )}
+                  {rentalType === "full-day" 
+                    ? `Full Day (${fullDayType})` 
+                    : `Half Day (${timeSlot})`}
                 </span>
               </div>
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-300">Base Price:</span>
+                <span className="font-medium">
+                  ₹{rentalType === "half-day" 
+                    ? camera.pricing.halfDay 
+                    : fullDayType === "9hrs" 
+                      ? camera.pricing.fullDay9hrs 
+                      : camera.pricing.fullDay24hrs}
+                </span>
+              </div>
+              {accessories.tripod && (
+                <div className="flex justify-between mb-1">
+                  <span className="text-gray-300">Tripod:</span>
+                  <span className="font-medium">+₹100</span>
+                </div>
+              )}
+              {accessories.longLens && (
+                <div className="flex justify-between mb-1">
+                  <span className="text-gray-300">Long Lens:</span>
+                  <span className="font-medium">+₹100</span>
+                </div>
+              )}
+              {accessories.extraBattery && (
+                <div className="flex justify-between mb-1">
+                  <span className="text-gray-300">Extra Battery:</span>
+                  <span className="font-medium">+₹150</span>
+                </div>
+              )}
               <div className="flex justify-between font-bold text-lg mt-4 pt-4 border-t border-gray-600">
                 <span>Total:</span>
                 <span className="text-purple-400">₹{calculateTotalPrice().toFixed(2)}</span>
@@ -643,44 +740,43 @@ export function ProductDetails({ camera }: ProductDetailsProps) {
               </div>
             )}
           </CardContent>
-      <CardFooter>
-  <div className="flex flex-col w-full space-y-4">
-    <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full">
-      <Button
-        className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-        onClick={handleAddToCart}
-        disabled={
-          !camera.available ||
-          addedToCart ||
-          !startDate ||
-          isDateReserved(startDate) ||
-          (rentalType === "full-day" && endDate && isDateRangeReserved(startDate, endDate))
-        }
-      >
-        {addedToCart ? (
-          <>
-            <Check className="mr-2 h-4 w-4" /> Added to Cart
-          </>
-        ) : (
-          <>
-            <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
-          </>
-        )}
-      </Button>
-    </motion.div>
+          <CardFooter>
+            <div className="flex flex-col w-full space-y-4">
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full">
+                <Button
+                  className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                  onClick={handleAddToCart}
+                  disabled={
+                    !camera.available ||
+                    addedToCart ||
+                    !startDate ||
+                    isDateReserved(startDate) ||
+                    (rentalType === "full-day" && endDate && isDateRangeReserved(startDate, endDate))
+                  }
+                >
+                  {addedToCart ? (
+                    <>
+                      <Check className="mr-2 h-4 w-4" /> Added to Cart
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
+                    </>
+                  )}
+                </Button>
+              </motion.div>
 
-    <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full">
-      <Button
-        className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-        onClick={() => router.push('/cart/checkout')}
-        disabled={!addedToCart}
-      >
-        <ArrowRight className="mr-2 h-4 w-4" /> Proceed to Checkout
-      </Button>
-    </motion.div>
-  </div>
-</CardFooter>
-
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full">
+                <Button
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                  onClick={() => router.push('/cart/checkout')}
+                  disabled={cart.length === 0}
+                >
+                  <ArrowRight className="mr-2 h-4 w-4" /> Proceed to Checkout
+                </Button>
+              </motion.div>
+            </div>
+          </CardFooter>
         </Card>
       </motion.div>
     </div>

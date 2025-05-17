@@ -5,7 +5,7 @@ import { connectToMongoose } from "@/lib/mongodb"
 import Order from "@/models/Order"
 import { startOfMonth } from "date-fns"
 
-const ADMIN_EMAILS = ["s.sreedhargoud@gmail.com"]
+const ADMIN_EMAILS = ["s.sreedhargoud@gmail.com", "muzameelpatan123@gmail.com"]
 
 interface PopularCamera {
   id: string

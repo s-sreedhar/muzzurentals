@@ -6,7 +6,7 @@ import Order from "@/models/Order"
 import mongoose from "mongoose"
 
 // List of admin emails (move to environment variables in production)
-const ADMIN_EMAILS = ["s.sreedhargoud@gmail.com"]
+const ADMIN_EMAILS = ["s.sreedhargoud@gmail.com", "muzameelpatan123@gmail.com"]
 
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions)
